@@ -1,0 +1,5 @@
+Script started on 2021-09-12 01:24:01-0700
+"./test/sort_list.cl", line 2: syntax error at or near TYPEID = TY
+Compilation halted due to lex and parse errors
+
+Script done on 2021-09-12 01:24:01-0700

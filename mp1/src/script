@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+
+file="./test/sort_list.cl"
+
+make parser
+script -c "./lexer ${file} | ./parser" debug.txt
+script -c "../reference-binaries/lexer ${file} | ../reference-binaries/parser" ref.txt
+script -c "diff debug.txt ref.txt" diff.txt
