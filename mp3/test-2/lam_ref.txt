@@ -1,0 +1,4565 @@
+declare i32 @strcmp(i8*, i8*)
+declare i32 @printf(i8*, ...)
+declare void @abort()
+declare i8* @malloc(i32)
+declare %Object* @Object_new()
+declare %Object* @Object_abort(%Object*)
+declare %String* @Object_type_name(%Object*)
+declare %Object* @Object_copy(%Object*)
+declare %IO* @IO_new()
+declare %IO* @IO_out_string(%IO*, %String*)
+declare %IO* @IO_out_int(%IO*, i32)
+declare %String* @IO_in_string(%IO*)
+declare i32 @IO_in_int(%IO*)
+declare %String* @String_new()
+declare i32 @String_length(%String*)
+declare %String* @String_concat(%String*, %String*)
+declare %String* @String_substr(%String*, i32, i32)
+declare %Int* @Int_new()
+declare void @Int_init(%Int*, i32)
+declare %Bool* @Bool_new()
+declare void @Bool_init(%Bool*, i1)
+@str.Object = internal constant [7 x i8] c"Object\00", align 1
+%Object = type {
+	%Object_vtable*
+}
+
+%Object_vtable = type {
+	i32,
+	i32,
+	i8*,
+	%Object* () *,
+	%Object* (%Object*) *,
+	%String* (%Object*) *,
+	%Object* (%Object*) *
+}
+
+@Object_vtable_prototype = constant %Object_vtable {
+	i32 0,
+	i32 ptrtoint (%Object* getelementptr (%Object, %Object* null, i32 1) to i32),
+	i8* getelementptr ([7 x i8], [7 x i8]* @str.Object, i32 0, i32 0),
+	%Object* () * @Object_new,
+	%Object* (%Object*) * @Object_abort,
+	%String* (%Object*) * @Object_type_name,
+	%Object* (%Object*) * @Object_copy
+}
+
+@str.Int = internal constant [4 x i8] c"Int\00", align 1
+%Int = type {
+	%Int_vtable*,
+	i32
+}
+
+%Int_vtable = type {
+	i32,
+	i32,
+	i8*,
+	%Int* () *,
+	%Object* (%Int*) *,
+	%String* (%Int*) *,
+	%Int* (%Int*) *
+}
+
+@Int_vtable_prototype = constant %Int_vtable {
+	i32 1,
+	i32 ptrtoint (%Int* getelementptr (%Int, %Int* null, i32 1) to i32),
+	i8* getelementptr ([4 x i8], [4 x i8]* @str.Int, i32 0, i32 0),
+	%Int* () * @Int_new,
+	%Object* (%Int*) * bitcast (%Object* (%Object*) * @Object_abort to %Object* (%Int*) *),
+	%String* (%Int*) * bitcast (%String* (%Object*) * @Object_type_name to %String* (%Int*) *),
+	%Int* (%Int*) * bitcast (%Object* (%Object*) * @Object_copy to %Int* (%Int*) *)
+}
+
+@str.Bool = internal constant [5 x i8] c"Bool\00", align 1
+%Bool = type {
+	%Bool_vtable*,
+	i1
+}
+
+%Bool_vtable = type {
+	i32,
+	i32,
+	i8*,
+	%Bool* () *,
+	%Object* (%Bool*) *,
+	%String* (%Bool*) *,
+	%Bool* (%Bool*) *
+}
+
+@Bool_vtable_prototype = constant %Bool_vtable {
+	i32 2,
+	i32 ptrtoint (%Bool* getelementptr (%Bool, %Bool* null, i32 1) to i32),
+	i8* getelementptr ([5 x i8], [5 x i8]* @str.Bool, i32 0, i32 0),
+	%Bool* () * @Bool_new,
+	%Object* (%Bool*) * bitcast (%Object* (%Object*) * @Object_abort to %Object* (%Bool*) *),
+	%String* (%Bool*) * bitcast (%String* (%Object*) * @Object_type_name to %String* (%Bool*) *),
+	%Bool* (%Bool*) * bitcast (%Object* (%Object*) * @Object_copy to %Bool* (%Bool*) *)
+}
+
+@str.String = internal constant [7 x i8] c"String\00", align 1
+%String = type {
+	%String_vtable*,
+	i8*
+}
+
+%String_vtable = type {
+	i32,
+	i32,
+	i8*,
+	%String* () *,
+	%Object* (%String*) *,
+	%String* (%String*) *,
+	%String* (%String*) *,
+	i32 (%String*) *,
+	%String* (%String*,%String*) *,
+	%String* (%String*,i32,i32) *
+}
+
+@String_vtable_prototype = constant %String_vtable {
+	i32 3,
+	i32 ptrtoint (%String* getelementptr (%String, %String* null, i32 1) to i32),
+	i8* getelementptr ([7 x i8], [7 x i8]* @str.String, i32 0, i32 0),
+	%String* () * @String_new,
+	%Object* (%String*) * bitcast (%Object* (%Object*) * @Object_abort to %Object* (%String*) *),
+	%String* (%String*) * bitcast (%String* (%Object*) * @Object_type_name to %String* (%String*) *),
+	%String* (%String*) * bitcast (%Object* (%Object*) * @Object_copy to %String* (%String*) *),
+	i32 (%String*) * @String_length,
+	%String* (%String*,%String*) * @String_concat,
+	%String* (%String*,i32,i32) * @String_substr
+}
+
+@str.IO = internal constant [3 x i8] c"IO\00", align 1
+%IO = type {
+	%IO_vtable*
+}
+
+%IO_vtable = type {
+	i32,
+	i32,
+	i8*,
+	%IO* () *,
+	%Object* (%IO*) *,
+	%String* (%IO*) *,
+	%IO* (%IO*) *,
+	%IO* (%IO*,%String*) *,
+	%IO* (%IO*,i32) *,
+	%String* (%IO*) *,
+	i32 (%IO*) *
+}
+
+@IO_vtable_prototype = constant %IO_vtable {
+	i32 4,
+	i32 ptrtoint (%IO* getelementptr (%IO, %IO* null, i32 1) to i32),
+	i8* getelementptr ([3 x i8], [3 x i8]* @str.IO, i32 0, i32 0),
+	%IO* () * @IO_new,
+	%Object* (%IO*) * bitcast (%Object* (%Object*) * @Object_abort to %Object* (%IO*) *),
+	%String* (%IO*) * bitcast (%String* (%Object*) * @Object_type_name to %String* (%IO*) *),
+	%IO* (%IO*) * bitcast (%Object* (%Object*) * @Object_copy to %IO* (%IO*) *),
+	%IO* (%IO*,%String*) * @IO_out_string,
+	%IO* (%IO*,i32) * @IO_out_int,
+	%String* (%IO*) * @IO_in_string,
+	i32 (%IO*) * @IO_in_int
+}
+
+@str.VarList = internal constant [8 x i8] c"VarList\00", align 1
+%VarList = type {
+	%VarList_vtable*
+}
+
+%VarList_vtable = type {
+	i32,
+	i32,
+	i8*,
+	%VarList* () *,
+	%Object* (%VarList*) *,
+	%String* (%VarList*) *,
+	%VarList* (%VarList*) *,
+	%VarList* (%VarList*,%String*) *,
+	%VarList* (%VarList*,i32) *,
+	%String* (%VarList*) *,
+	i32 (%VarList*) *,
+	i1 (%VarList*) *,
+	%Variable* (%VarList*) *,
+	%VarList* (%VarList*) *,
+	%VarList* (%VarList*,%Variable*) *,
+	%VarList* (%VarList*) *
+}
+
+@VarList_vtable_prototype = constant %VarList_vtable {
+	i32 5,
+	i32 ptrtoint (%VarList* getelementptr (%VarList, %VarList* null, i32 1) to i32),
+	i8* getelementptr ([8 x i8], [8 x i8]* @str.VarList, i32 0, i32 0),
+	%VarList* () * @VarList_new,
+	%Object* (%VarList*) * bitcast (%Object* (%Object*) * @Object_abort to %Object* (%VarList*) *),
+	%String* (%VarList*) * bitcast (%String* (%Object*) * @Object_type_name to %String* (%VarList*) *),
+	%VarList* (%VarList*) * bitcast (%Object* (%Object*) * @Object_copy to %VarList* (%VarList*) *),
+	%VarList* (%VarList*,%String*) * bitcast (%IO* (%IO*,%String*) * @IO_out_string to %VarList* (%VarList*,%String*) *),
+	%VarList* (%VarList*,i32) * bitcast (%IO* (%IO*,i32) * @IO_out_int to %VarList* (%VarList*,i32) *),
+	%String* (%VarList*) * bitcast (%String* (%IO*) * @IO_in_string to %String* (%VarList*) *),
+	i32 (%VarList*) * bitcast (i32 (%IO*) * @IO_in_int to i32 (%VarList*) *),
+	i1 (%VarList*) * @VarList_isNil,
+	%Variable* (%VarList*) * @VarList_head,
+	%VarList* (%VarList*) * @VarList_tail,
+	%VarList* (%VarList*,%Variable*) * @VarList_add,
+	%VarList* (%VarList*) * @VarList_print
+}
+
+@str.VarListNE = internal constant [10 x i8] c"VarListNE\00", align 1
+%VarListNE = type {
+	%VarListNE_vtable*,
+	%Variable*,
+	%VarList*
+}
+
+%VarListNE_vtable = type {
+	i32,
+	i32,
+	i8*,
+	%VarListNE* () *,
+	%Object* (%VarListNE*) *,
+	%String* (%VarListNE*) *,
+	%VarListNE* (%VarListNE*) *,
+	%VarListNE* (%VarListNE*,%String*) *,
+	%VarListNE* (%VarListNE*,i32) *,
+	%String* (%VarListNE*) *,
+	i32 (%VarListNE*) *,
+	i1 (%VarListNE*) *,
+	%Variable* (%VarListNE*) *,
+	%VarList* (%VarListNE*) *,
+	%VarList* (%VarListNE*,%Variable*) *,
+	%VarListNE* (%VarListNE*) *,
+	%VarListNE* (%VarListNE*,%Variable*,%VarList*) *
+}
+
+@VarListNE_vtable_prototype = constant %VarListNE_vtable {
+	i32 6,
+	i32 ptrtoint (%VarListNE* getelementptr (%VarListNE, %VarListNE* null, i32 1) to i32),
+	i8* getelementptr ([10 x i8], [10 x i8]* @str.VarListNE, i32 0, i32 0),
+	%VarListNE* () * @VarListNE_new,
+	%Object* (%VarListNE*) * bitcast (%Object* (%Object*) * @Object_abort to %Object* (%VarListNE*) *),
+	%String* (%VarListNE*) * bitcast (%String* (%Object*) * @Object_type_name to %String* (%VarListNE*) *),
+	%VarListNE* (%VarListNE*) * bitcast (%Object* (%Object*) * @Object_copy to %VarListNE* (%VarListNE*) *),
+	%VarListNE* (%VarListNE*,%String*) * bitcast (%IO* (%IO*,%String*) * @IO_out_string to %VarListNE* (%VarListNE*,%String*) *),
+	%VarListNE* (%VarListNE*,i32) * bitcast (%IO* (%IO*,i32) * @IO_out_int to %VarListNE* (%VarListNE*,i32) *),
+	%String* (%VarListNE*) * bitcast (%String* (%IO*) * @IO_in_string to %String* (%VarListNE*) *),
+	i32 (%VarListNE*) * bitcast (i32 (%IO*) * @IO_in_int to i32 (%VarListNE*) *),
+	i1 (%VarListNE*) * @VarListNE_isNil,
+	%Variable* (%VarListNE*) * @VarListNE_head,
+	%VarList* (%VarListNE*) * @VarListNE_tail,
+	%VarList* (%VarListNE*,%Variable*) * bitcast (%VarList* (%VarList*,%Variable*) * @VarList_add to %VarList* (%VarListNE*,%Variable*) *),
+	%VarListNE* (%VarListNE*) * @VarListNE_print,
+	%VarListNE* (%VarListNE*,%Variable*,%VarList*) * @VarListNE_init
+}
+
+@str.Expr = internal constant [5 x i8] c"Expr\00", align 1
+%Expr = type {
+	%Expr_vtable*
+}
+
+%Expr_vtable = type {
+	i32,
+	i32,
+	i8*,
+	%Expr* () *,
+	%Object* (%Expr*) *,
+	%String* (%Expr*) *,
+	%Expr* (%Expr*) *,
+	%Expr* (%Expr*,%String*) *,
+	%Expr* (%Expr*,i32) *,
+	%String* (%Expr*) *,
+	i32 (%Expr*) *,
+	%Expr* (%Expr*) *,
+	%Expr* (%Expr*) *,
+	%Expr* (%Expr*,%Variable*,%Expr*) *,
+	%Expr* (%Expr*,%VarList*,%LambdaListRef*) *
+}
+
+@Expr_vtable_prototype = constant %Expr_vtable {
+	i32 7,
+	i32 ptrtoint (%Expr* getelementptr (%Expr, %Expr* null, i32 1) to i32),
+	i8* getelementptr ([5 x i8], [5 x i8]* @str.Expr, i32 0, i32 0),
+	%Expr* () * @Expr_new,
+	%Object* (%Expr*) * bitcast (%Object* (%Object*) * @Object_abort to %Object* (%Expr*) *),
+	%String* (%Expr*) * bitcast (%String* (%Object*) * @Object_type_name to %String* (%Expr*) *),
+	%Expr* (%Expr*) * bitcast (%Object* (%Object*) * @Object_copy to %Expr* (%Expr*) *),
+	%Expr* (%Expr*,%String*) * bitcast (%IO* (%IO*,%String*) * @IO_out_string to %Expr* (%Expr*,%String*) *),
+	%Expr* (%Expr*,i32) * bitcast (%IO* (%IO*,i32) * @IO_out_int to %Expr* (%Expr*,i32) *),
+	%String* (%Expr*) * bitcast (%String* (%IO*) * @IO_in_string to %String* (%Expr*) *),
+	i32 (%Expr*) * bitcast (i32 (%IO*) * @IO_in_int to i32 (%Expr*) *),
+	%Expr* (%Expr*) * @Expr_print_self,
+	%Expr* (%Expr*) * @Expr_beta,
+	%Expr* (%Expr*,%Variable*,%Expr*) * @Expr_substitute,
+	%Expr* (%Expr*,%VarList*,%LambdaListRef*) * @Expr_gen_code
+}
+
+@str.Variable = internal constant [9 x i8] c"Variable\00", align 1
+%Variable = type {
+	%Variable_vtable*,
+	%String*
+}
+
+%Variable_vtable = type {
+	i32,
+	i32,
+	i8*,
+	%Variable* () *,
+	%Object* (%Variable*) *,
+	%String* (%Variable*) *,
+	%Variable* (%Variable*) *,
+	%Variable* (%Variable*,%String*) *,
+	%Variable* (%Variable*,i32) *,
+	%String* (%Variable*) *,
+	i32 (%Variable*) *,
+	%Variable* (%Variable*) *,
+	%Expr* (%Variable*) *,
+	%Expr* (%Variable*,%Variable*,%Expr*) *,
+	%Variable* (%Variable*,%VarList*,%LambdaListRef*) *,
+	%Variable* (%Variable*,%String*) *
+}
+
+@Variable_vtable_prototype = constant %Variable_vtable {
+	i32 8,
+	i32 ptrtoint (%Variable* getelementptr (%Variable, %Variable* null, i32 1) to i32),
+	i8* getelementptr ([9 x i8], [9 x i8]* @str.Variable, i32 0, i32 0),
+	%Variable* () * @Variable_new,
+	%Object* (%Variable*) * bitcast (%Object* (%Object*) * @Object_abort to %Object* (%Variable*) *),
+	%String* (%Variable*) * bitcast (%String* (%Object*) * @Object_type_name to %String* (%Variable*) *),
+	%Variable* (%Variable*) * bitcast (%Object* (%Object*) * @Object_copy to %Variable* (%Variable*) *),
+	%Variable* (%Variable*,%String*) * bitcast (%IO* (%IO*,%String*) * @IO_out_string to %Variable* (%Variable*,%String*) *),
+	%Variable* (%Variable*,i32) * bitcast (%IO* (%IO*,i32) * @IO_out_int to %Variable* (%Variable*,i32) *),
+	%String* (%Variable*) * bitcast (%String* (%IO*) * @IO_in_string to %String* (%Variable*) *),
+	i32 (%Variable*) * bitcast (i32 (%IO*) * @IO_in_int to i32 (%Variable*) *),
+	%Variable* (%Variable*) * @Variable_print_self,
+	%Expr* (%Variable*) * @Variable_beta,
+	%Expr* (%Variable*,%Variable*,%Expr*) * @Variable_substitute,
+	%Variable* (%Variable*,%VarList*,%LambdaListRef*) * @Variable_gen_code,
+	%Variable* (%Variable*,%String*) * @Variable_init
+}
+
+@str.Lambda = internal constant [7 x i8] c"Lambda\00", align 1
+%Lambda = type {
+	%Lambda_vtable*,
+	%Variable*,
+	%Expr*
+}
+
+%Lambda_vtable = type {
+	i32,
+	i32,
+	i8*,
+	%Lambda* () *,
+	%Object* (%Lambda*) *,
+	%String* (%Lambda*) *,
+	%Lambda* (%Lambda*) *,
+	%Lambda* (%Lambda*,%String*) *,
+	%Lambda* (%Lambda*,i32) *,
+	%String* (%Lambda*) *,
+	i32 (%Lambda*) *,
+	%Lambda* (%Lambda*) *,
+	%Expr* (%Lambda*) *,
+	%Expr* (%Lambda*,%Variable*,%Expr*) *,
+	%Lambda* (%Lambda*,%VarList*,%LambdaListRef*) *,
+	%Lambda* (%Lambda*,%Variable*,%Expr*) *,
+	%Expr* (%Lambda*,%Expr*) *,
+	%Lambda* (%Lambda*,i32,%VarList*,%LambdaListRef*) *
+}
+
+@Lambda_vtable_prototype = constant %Lambda_vtable {
+	i32 9,
+	i32 ptrtoint (%Lambda* getelementptr (%Lambda, %Lambda* null, i32 1) to i32),
+	i8* getelementptr ([7 x i8], [7 x i8]* @str.Lambda, i32 0, i32 0),
+	%Lambda* () * @Lambda_new,
+	%Object* (%Lambda*) * bitcast (%Object* (%Object*) * @Object_abort to %Object* (%Lambda*) *),
+	%String* (%Lambda*) * bitcast (%String* (%Object*) * @Object_type_name to %String* (%Lambda*) *),
+	%Lambda* (%Lambda*) * bitcast (%Object* (%Object*) * @Object_copy to %Lambda* (%Lambda*) *),
+	%Lambda* (%Lambda*,%String*) * bitcast (%IO* (%IO*,%String*) * @IO_out_string to %Lambda* (%Lambda*,%String*) *),
+	%Lambda* (%Lambda*,i32) * bitcast (%IO* (%IO*,i32) * @IO_out_int to %Lambda* (%Lambda*,i32) *),
+	%String* (%Lambda*) * bitcast (%String* (%IO*) * @IO_in_string to %String* (%Lambda*) *),
+	i32 (%Lambda*) * bitcast (i32 (%IO*) * @IO_in_int to i32 (%Lambda*) *),
+	%Lambda* (%Lambda*) * @Lambda_print_self,
+	%Expr* (%Lambda*) * @Lambda_beta,
+	%Expr* (%Lambda*,%Variable*,%Expr*) * @Lambda_substitute,
+	%Lambda* (%Lambda*,%VarList*,%LambdaListRef*) * @Lambda_gen_code,
+	%Lambda* (%Lambda*,%Variable*,%Expr*) * @Lambda_init,
+	%Expr* (%Lambda*,%Expr*) * @Lambda_apply,
+	%Lambda* (%Lambda*,i32,%VarList*,%LambdaListRef*) * @Lambda_gen_closure_code
+}
+
+@str.App = internal constant [4 x i8] c"App\00", align 1
+%App = type {
+	%App_vtable*,
+	%Expr*,
+	%Expr*
+}
+
+%App_vtable = type {
+	i32,
+	i32,
+	i8*,
+	%App* () *,
+	%Object* (%App*) *,
+	%String* (%App*) *,
+	%App* (%App*) *,
+	%App* (%App*,%String*) *,
+	%App* (%App*,i32) *,
+	%String* (%App*) *,
+	i32 (%App*) *,
+	%App* (%App*) *,
+	%Expr* (%App*) *,
+	%Expr* (%App*,%Variable*,%Expr*) *,
+	%App* (%App*,%VarList*,%LambdaListRef*) *,
+	%App* (%App*,%Expr*,%Expr*) *
+}
+
+@App_vtable_prototype = constant %App_vtable {
+	i32 10,
+	i32 ptrtoint (%App* getelementptr (%App, %App* null, i32 1) to i32),
+	i8* getelementptr ([4 x i8], [4 x i8]* @str.App, i32 0, i32 0),
+	%App* () * @App_new,
+	%Object* (%App*) * bitcast (%Object* (%Object*) * @Object_abort to %Object* (%App*) *),
+	%String* (%App*) * bitcast (%String* (%Object*) * @Object_type_name to %String* (%App*) *),
+	%App* (%App*) * bitcast (%Object* (%Object*) * @Object_copy to %App* (%App*) *),
+	%App* (%App*,%String*) * bitcast (%IO* (%IO*,%String*) * @IO_out_string to %App* (%App*,%String*) *),
+	%App* (%App*,i32) * bitcast (%IO* (%IO*,i32) * @IO_out_int to %App* (%App*,i32) *),
+	%String* (%App*) * bitcast (%String* (%IO*) * @IO_in_string to %String* (%App*) *),
+	i32 (%App*) * bitcast (i32 (%IO*) * @IO_in_int to i32 (%App*) *),
+	%App* (%App*) * @App_print_self,
+	%Expr* (%App*) * @App_beta,
+	%Expr* (%App*,%Variable*,%Expr*) * @App_substitute,
+	%App* (%App*,%VarList*,%LambdaListRef*) * @App_gen_code,
+	%App* (%App*,%Expr*,%Expr*) * @App_init
+}
+
+@str.Term = internal constant [5 x i8] c"Term\00", align 1
+%Term = type {
+	%Term_vtable*
+}
+
+%Term_vtable = type {
+	i32,
+	i32,
+	i8*,
+	%Term* () *,
+	%Object* (%Term*) *,
+	%String* (%Term*) *,
+	%Term* (%Term*) *,
+	%Term* (%Term*,%String*) *,
+	%Term* (%Term*,i32) *,
+	%String* (%Term*) *,
+	i32 (%Term*) *,
+	%Variable* (%Term*,%String*) *,
+	%Lambda* (%Term*,%Variable*,%Expr*) *,
+	%App* (%Term*,%Expr*,%Expr*) *,
+	%Expr* (%Term*) *,
+	%Expr* (%Term*) *,
+	%Expr* (%Term*) *
+}
+
+@Term_vtable_prototype = constant %Term_vtable {
+	i32 11,
+	i32 ptrtoint (%Term* getelementptr (%Term, %Term* null, i32 1) to i32),
+	i8* getelementptr ([5 x i8], [5 x i8]* @str.Term, i32 0, i32 0),
+	%Term* () * @Term_new,
+	%Object* (%Term*) * bitcast (%Object* (%Object*) * @Object_abort to %Object* (%Term*) *),
+	%String* (%Term*) * bitcast (%String* (%Object*) * @Object_type_name to %String* (%Term*) *),
+	%Term* (%Term*) * bitcast (%Object* (%Object*) * @Object_copy to %Term* (%Term*) *),
+	%Term* (%Term*,%String*) * bitcast (%IO* (%IO*,%String*) * @IO_out_string to %Term* (%Term*,%String*) *),
+	%Term* (%Term*,i32) * bitcast (%IO* (%IO*,i32) * @IO_out_int to %Term* (%Term*,i32) *),
+	%String* (%Term*) * bitcast (%String* (%IO*) * @IO_in_string to %String* (%Term*) *),
+	i32 (%Term*) * bitcast (i32 (%IO*) * @IO_in_int to i32 (%Term*) *),
+	%Variable* (%Term*,%String*) * @Term_var,
+	%Lambda* (%Term*,%Variable*,%Expr*) * @Term_lam,
+	%App* (%Term*,%Expr*,%Expr*) * @Term_app,
+	%Expr* (%Term*) * @Term_i,
+	%Expr* (%Term*) * @Term_k,
+	%Expr* (%Term*) * @Term_s
+}
+
+@str.Main = internal constant [5 x i8] c"Main\00", align 1
+%Main = type {
+	%Main_vtable*
+}
+
+%Main_vtable = type {
+	i32,
+	i32,
+	i8*,
+	%Main* () *,
+	%Object* (%Main*) *,
+	%String* (%Main*) *,
+	%Main* (%Main*) *,
+	%Main* (%Main*,%String*) *,
+	%Main* (%Main*,i32) *,
+	%String* (%Main*) *,
+	i32 (%Main*) *,
+	%Variable* (%Main*,%String*) *,
+	%Lambda* (%Main*,%Variable*,%Expr*) *,
+	%App* (%Main*,%Expr*,%Expr*) *,
+	%Expr* (%Main*) *,
+	%Expr* (%Main*) *,
+	%Expr* (%Main*) *,
+	%Expr* (%Main*,%Expr*) *,
+	%Main* (%Main*) *,
+	%Main* (%Main*) *,
+	%Main* (%Main*,%Expr*) *,
+	i32 (%Main*) *
+}
+
+@Main_vtable_prototype = constant %Main_vtable {
+	i32 12,
+	i32 ptrtoint (%Main* getelementptr (%Main, %Main* null, i32 1) to i32),
+	i8* getelementptr ([5 x i8], [5 x i8]* @str.Main, i32 0, i32 0),
+	%Main* () * @Main_new,
+	%Object* (%Main*) * bitcast (%Object* (%Object*) * @Object_abort to %Object* (%Main*) *),
+	%String* (%Main*) * bitcast (%String* (%Object*) * @Object_type_name to %String* (%Main*) *),
+	%Main* (%Main*) * bitcast (%Object* (%Object*) * @Object_copy to %Main* (%Main*) *),
+	%Main* (%Main*,%String*) * bitcast (%IO* (%IO*,%String*) * @IO_out_string to %Main* (%Main*,%String*) *),
+	%Main* (%Main*,i32) * bitcast (%IO* (%IO*,i32) * @IO_out_int to %Main* (%Main*,i32) *),
+	%String* (%Main*) * bitcast (%String* (%IO*) * @IO_in_string to %String* (%Main*) *),
+	i32 (%Main*) * bitcast (i32 (%IO*) * @IO_in_int to i32 (%Main*) *),
+	%Variable* (%Main*,%String*) * bitcast (%Variable* (%Term*,%String*) * @Term_var to %Variable* (%Main*,%String*) *),
+	%Lambda* (%Main*,%Variable*,%Expr*) * bitcast (%Lambda* (%Term*,%Variable*,%Expr*) * @Term_lam to %Lambda* (%Main*,%Variable*,%Expr*) *),
+	%App* (%Main*,%Expr*,%Expr*) * bitcast (%App* (%Term*,%Expr*,%Expr*) * @Term_app to %App* (%Main*,%Expr*,%Expr*) *),
+	%Expr* (%Main*) * bitcast (%Expr* (%Term*) * @Term_i to %Expr* (%Main*) *),
+	%Expr* (%Main*) * bitcast (%Expr* (%Term*) * @Term_k to %Expr* (%Main*) *),
+	%Expr* (%Main*) * bitcast (%Expr* (%Term*) * @Term_s to %Expr* (%Main*) *),
+	%Expr* (%Main*,%Expr*) * @Main_beta_reduce,
+	%Main* (%Main*) * @Main_eval_class,
+	%Main* (%Main*) * @Main_closure_class,
+	%Main* (%Main*,%Expr*) * @Main_gen_code,
+	i32 (%Main*) * @Main_main
+}
+
+@str.LambdaList = internal constant [11 x i8] c"LambdaList\00", align 1
+%LambdaList = type {
+	%LambdaList_vtable*
+}
+
+%LambdaList_vtable = type {
+	i32,
+	i32,
+	i8*,
+	%LambdaList* () *,
+	%Object* (%LambdaList*) *,
+	%String* (%LambdaList*) *,
+	%LambdaList* (%LambdaList*) *,
+	i1 (%LambdaList*) *,
+	%VarList* (%LambdaList*) *,
+	%Lambda* (%LambdaList*) *,
+	i32 (%LambdaList*) *,
+	%LambdaList* (%LambdaList*) *,
+	%LambdaList* (%LambdaList*,%VarList*,%Lambda*,i32) *
+}
+
+@LambdaList_vtable_prototype = constant %LambdaList_vtable {
+	i32 13,
+	i32 ptrtoint (%LambdaList* getelementptr (%LambdaList, %LambdaList* null, i32 1) to i32),
+	i8* getelementptr ([11 x i8], [11 x i8]* @str.LambdaList, i32 0, i32 0),
+	%LambdaList* () * @LambdaList_new,
+	%Object* (%LambdaList*) * bitcast (%Object* (%Object*) * @Object_abort to %Object* (%LambdaList*) *),
+	%String* (%LambdaList*) * bitcast (%String* (%Object*) * @Object_type_name to %String* (%LambdaList*) *),
+	%LambdaList* (%LambdaList*) * bitcast (%Object* (%Object*) * @Object_copy to %LambdaList* (%LambdaList*) *),
+	i1 (%LambdaList*) * @LambdaList_isNil,
+	%VarList* (%LambdaList*) * @LambdaList_headE,
+	%Lambda* (%LambdaList*) * @LambdaList_headC,
+	i32 (%LambdaList*) * @LambdaList_headN,
+	%LambdaList* (%LambdaList*) * @LambdaList_tail,
+	%LambdaList* (%LambdaList*,%VarList*,%Lambda*,i32) * @LambdaList_add
+}
+
+@str.LambdaListNE = internal constant [13 x i8] c"LambdaListNE\00", align 1
+%LambdaListNE = type {
+	%LambdaListNE_vtable*,
+	%Lambda*,
+	i32,
+	%VarList*,
+	%LambdaList*
+}
+
+%LambdaListNE_vtable = type {
+	i32,
+	i32,
+	i8*,
+	%LambdaListNE* () *,
+	%Object* (%LambdaListNE*) *,
+	%String* (%LambdaListNE*) *,
+	%LambdaListNE* (%LambdaListNE*) *,
+	i1 (%LambdaListNE*) *,
+	%VarList* (%LambdaListNE*) *,
+	%Lambda* (%LambdaListNE*) *,
+	i32 (%LambdaListNE*) *,
+	%LambdaList* (%LambdaListNE*) *,
+	%LambdaList* (%LambdaListNE*,%VarList*,%Lambda*,i32) *,
+	%LambdaListNE* (%LambdaListNE*,%VarList*,%Lambda*,i32,%LambdaList*) *
+}
+
+@LambdaListNE_vtable_prototype = constant %LambdaListNE_vtable {
+	i32 14,
+	i32 ptrtoint (%LambdaListNE* getelementptr (%LambdaListNE, %LambdaListNE* null, i32 1) to i32),
+	i8* getelementptr ([13 x i8], [13 x i8]* @str.LambdaListNE, i32 0, i32 0),
+	%LambdaListNE* () * @LambdaListNE_new,
+	%Object* (%LambdaListNE*) * bitcast (%Object* (%Object*) * @Object_abort to %Object* (%LambdaListNE*) *),
+	%String* (%LambdaListNE*) * bitcast (%String* (%Object*) * @Object_type_name to %String* (%LambdaListNE*) *),
+	%LambdaListNE* (%LambdaListNE*) * bitcast (%Object* (%Object*) * @Object_copy to %LambdaListNE* (%LambdaListNE*) *),
+	i1 (%LambdaListNE*) * @LambdaListNE_isNil,
+	%VarList* (%LambdaListNE*) * @LambdaListNE_headE,
+	%Lambda* (%LambdaListNE*) * @LambdaListNE_headC,
+	i32 (%LambdaListNE*) * @LambdaListNE_headN,
+	%LambdaList* (%LambdaListNE*) * @LambdaListNE_tail,
+	%LambdaList* (%LambdaListNE*,%VarList*,%Lambda*,i32) * bitcast (%LambdaList* (%LambdaList*,%VarList*,%Lambda*,i32) * @LambdaList_add to %LambdaList* (%LambdaListNE*,%VarList*,%Lambda*,i32) *),
+	%LambdaListNE* (%LambdaListNE*,%VarList*,%Lambda*,i32,%LambdaList*) * @LambdaListNE_init
+}
+
+@str.LambdaListRef = internal constant [14 x i8] c"LambdaListRef\00", align 1
+%LambdaListRef = type {
+	%LambdaListRef_vtable*,
+	i32,
+	%LambdaList*
+}
+
+%LambdaListRef_vtable = type {
+	i32,
+	i32,
+	i8*,
+	%LambdaListRef* () *,
+	%Object* (%LambdaListRef*) *,
+	%String* (%LambdaListRef*) *,
+	%LambdaListRef* (%LambdaListRef*) *,
+	i1 (%LambdaListRef*) *,
+	%VarList* (%LambdaListRef*) *,
+	%Lambda* (%LambdaListRef*) *,
+	i32 (%LambdaListRef*) *,
+	%LambdaListRef* (%LambdaListRef*) *,
+	i32 (%LambdaListRef*,%VarList*,%Lambda*) *,
+	%LambdaListRef* (%LambdaListRef*) *
+}
+
+@LambdaListRef_vtable_prototype = constant %LambdaListRef_vtable {
+	i32 15,
+	i32 ptrtoint (%LambdaListRef* getelementptr (%LambdaListRef, %LambdaListRef* null, i32 1) to i32),
+	i8* getelementptr ([14 x i8], [14 x i8]* @str.LambdaListRef, i32 0, i32 0),
+	%LambdaListRef* () * @LambdaListRef_new,
+	%Object* (%LambdaListRef*) * bitcast (%Object* (%Object*) * @Object_abort to %Object* (%LambdaListRef*) *),
+	%String* (%LambdaListRef*) * bitcast (%String* (%Object*) * @Object_type_name to %String* (%LambdaListRef*) *),
+	%LambdaListRef* (%LambdaListRef*) * bitcast (%Object* (%Object*) * @Object_copy to %LambdaListRef* (%LambdaListRef*) *),
+	i1 (%LambdaListRef*) * @LambdaListRef_isNil,
+	%VarList* (%LambdaListRef*) * @LambdaListRef_headE,
+	%Lambda* (%LambdaListRef*) * @LambdaListRef_headC,
+	i32 (%LambdaListRef*) * @LambdaListRef_headN,
+	%LambdaListRef* (%LambdaListRef*) * @LambdaListRef_reset,
+	i32 (%LambdaListRef*,%VarList*,%Lambda*) * @LambdaListRef_add,
+	%LambdaListRef* (%LambdaListRef*) * @LambdaListRef_removeHead
+}
+
+@str.55 = internal constant [14 x i8] c"<basic class>\00", align 1
+@String.55 = constant %String {
+	%String_vtable* @String_vtable_prototype,
+	i8* getelementptr ([14 x i8], [14 x i8]* @str.55, i32 0, i32 0)
+}
+
+@str.54 = internal constant [8 x i8] c"\0A};\0A};\0A\00", align 1
+@String.54 = constant %String {
+	%String_vtable* @String_vtable_prototype,
+	i8* getelementptr ([8 x i8], [8 x i8]* @str.54, i32 0, i32 0)
+}
+
+@str.53 = internal constant [25 x i8] c"  main() : EvalObject {\0A\00", align 1
+@String.53 = constant %String {
+	%String_vtable* @String_vtable_prototype,
+	i8* getelementptr ([25 x i8], [25 x i8]* @str.53, i32 0, i32 0)
+}
+
+@str.52 = internal constant [14 x i8] c"class Main {\0A\00", align 1
+@String.52 = constant %String {
+	%String_vtable* @String_vtable_prototype,
+	i8* getelementptr ([14 x i8], [14 x i8]* @str.52, i32 0, i32 0)
+}
+
+@str.51 = internal constant [51 x i8] c"(*Generated by lam.cl (Jeff Foster, March 2000)*)\0A\00", align 1
+@String.51 = constant %String {
+	%String_vtable* @String_vtable_prototype,
+	i8* getelementptr ([51 x i8], [51 x i8]* @str.51, i32 0, i32 0)
+}
+
+@str.50 = internal constant [47 x i8] c"\0A------------------cut here------------------\0A\00", align 1
+@String.50 = constant %String {
+	%String_vtable* @String_vtable_prototype,
+	i8* getelementptr ([47 x i8], [47 x i8]* @str.50, i32 0, i32 0)
+}
+
+@str.49 = internal constant [21 x i8] c"Generating code for \00", align 1
+@String.49 = constant %String {
+	%String_vtable* @String_vtable_prototype,
+	i8* getelementptr ([21 x i8], [21 x i8]* @str.49, i32 0, i32 0)
+}
+
+@str.48 = internal constant [62 x i8] c"  apply(y : EvalObject) : EvalObject { { abort(); self; } };\0A\00", align 1
+@String.48 = constant %String {
+	%String_vtable* @String_vtable_prototype,
+	i8* getelementptr ([62 x i8], [62 x i8]* @str.48, i32 0, i32 0)
+}
+
+@str.47 = internal constant [57 x i8] c"  init(p : Closure) : Closure {{ parent <- p; self; }};\0A\00", align 1
+@String.47 = constant %String {
+	%String_vtable* @String_vtable_prototype,
+	i8* getelementptr ([57 x i8], [57 x i8]* @str.47, i32 0, i32 0)
+}
+
+@str.46 = internal constant [31 x i8] c"  get_x() : EvalObject { x };\0A\00", align 1
+@String.46 = constant %String {
+	%String_vtable* @String_vtable_prototype,
+	i8* getelementptr ([31 x i8], [31 x i8]* @str.46, i32 0, i32 0)
+}
+
+@str.45 = internal constant [38 x i8] c"  get_parent() : Closure { parent };\0A\00", align 1
+@String.45 = constant %String {
+	%String_vtable* @String_vtable_prototype,
+	i8* getelementptr ([38 x i8], [38 x i8]* @str.45, i32 0, i32 0)
+}
+
+@str.44 = internal constant [19 x i8] c"  x : EvalObject;\0A\00", align 1
+@String.44 = constant %String {
+	%String_vtable* @String_vtable_prototype,
+	i8* getelementptr ([19 x i8], [19 x i8]* @str.44, i32 0, i32 0)
+}
+
+@str.43 = internal constant [21 x i8] c"  parent : Closure;\0A\00", align 1
+@String.43 = constant %String {
+	%String_vtable* @String_vtable_prototype,
+	i8* getelementptr ([21 x i8], [21 x i8]* @str.43, i32 0, i32 0)
+}
+
+@str.42 = internal constant [37 x i8] c"class Closure inherits EvalObject {\0A\00", align 1
+@String.42 = constant %String {
+	%String_vtable* @String_vtable_prototype,
+	i8* getelementptr ([37 x i8], [37 x i8]* @str.42, i32 0, i32 0)
+}
+
+@str.41 = internal constant [47 x i8] c"  eval() : EvalObject { { abort(); self; } };\0A\00", align 1
+@String.41 = constant %String {
+	%String_vtable* @String_vtable_prototype,
+	i8* getelementptr ([47 x i8], [47 x i8]* @str.41, i32 0, i32 0)
+}
+
+@str.40 = internal constant [32 x i8] c"class EvalObject inherits IO {\0A\00", align 1
+@String.40 = constant %String {
+	%String_vtable* @String_vtable_prototype,
+	i8* getelementptr ([32 x i8], [32 x i8]* @str.40, i32 0, i32 0)
+}
+
+@str.39 = internal constant [5 x i8] c" =>\0A\00", align 1
+@String.39 = constant %String {
+	%String_vtable* @String_vtable_prototype,
+	i8* getelementptr ([5 x i8], [5 x i8]* @str.39, i32 0, i32 0)
+}
+
+@str.38 = internal constant [14 x i8] c"beta-reduce: \00", align 1
+@String.38 = constant %String {
+	%String_vtable* @String_vtable_prototype,
+	i8* getelementptr ([14 x i8], [14 x i8]* @str.38, i32 0, i32 0)
+}
+
+@str.37 = internal constant [2 x i8] c"z\00", align 1
+@String.37 = constant %String {
+	%String_vtable* @String_vtable_prototype,
+	i8* getelementptr ([2 x i8], [2 x i8]* @str.37, i32 0, i32 0)
+}
+
+@str.36 = internal constant [2 x i8] c"y\00", align 1
+@String.36 = constant %String {
+	%String_vtable* @String_vtable_prototype,
+	i8* getelementptr ([2 x i8], [2 x i8]* @str.36, i32 0, i32 0)
+}
+
+@str.35 = internal constant [2 x i8] c"x\00", align 1
+@String.35 = constant %String {
+	%String_vtable* @String_vtable_prototype,
+	i8* getelementptr ([2 x i8], [2 x i8]* @str.35, i32 0, i32 0)
+}
+
+@str.34 = internal constant [8 x i8] c"  esac)\00", align 1
+@String.34 = constant %String {
+	%String_vtable* @String_vtable_prototype,
+	i8* getelementptr ([8 x i8], [8 x i8]* @str.34, i32 0, i32 0)
+}
+
+@str.33 = internal constant [49 x i8] c"    o : Object => { abort(); new EvalObject; };\0A\00", align 1
+@String.33 = constant %String {
+	%String_vtable* @String_vtable_prototype,
+	i8* getelementptr ([49 x i8], [49 x i8]* @str.33, i32 0, i32 0)
+}
+
+@str.32 = internal constant [32 x i8] c"    c : Closure => c.apply(y);\0A\00", align 1
+@String.32 = constant %String {
+	%String_vtable* @String_vtable_prototype,
+	i8* getelementptr ([32 x i8], [32 x i8]* @str.32, i32 0, i32 0)
+}
+
+@str.31 = internal constant [13 x i8] c"  case x of\0A\00", align 1
+@String.31 = constant %String {
+	%String_vtable* @String_vtable_prototype,
+	i8* getelementptr ([13 x i8], [13 x i8]* @str.31, i32 0, i32 0)
+}
+
+@str.30 = internal constant [5 x i8] c" in\0A\00", align 1
+@String.30 = constant %String {
+	%String_vtable* @String_vtable_prototype,
+	i8* getelementptr ([5 x i8], [5 x i8]* @str.30, i32 0, i32 0)
+}
+
+@str.29 = internal constant [24 x i8] c"     y : EvalObject <- \00", align 1
+@String.29 = constant %String {
+	%String_vtable* @String_vtable_prototype,
+	i8* getelementptr ([24 x i8], [24 x i8]* @str.29, i32 0, i32 0)
+}
+
+@str.28 = internal constant [3 x i8] c",\0A\00", align 1
+@String.28 = constant %String {
+	%String_vtable* @String_vtable_prototype,
+	i8* getelementptr ([3 x i8], [3 x i8]* @str.28, i32 0, i32 0)
+}
+
+@str.27 = internal constant [24 x i8] c"(let x : EvalObject <- \00", align 1
+@String.27 = constant %String {
+	%String_vtable* @String_vtable_prototype,
+	i8* getelementptr ([24 x i8], [24 x i8]* @str.27, i32 0, i32 0)
+}
+
+@str.26 = internal constant [3 x i8] c"))\00", align 1
+@String.26 = constant %String {
+	%String_vtable* @String_vtable_prototype,
+	i8* getelementptr ([3 x i8], [3 x i8]* @str.26, i32 0, i32 0)
+}
+
+@str.25 = internal constant [4 x i8] c")@(\00", align 1
+@String.25 = constant %String {
+	%String_vtable* @String_vtable_prototype,
+	i8* getelementptr ([4 x i8], [4 x i8]* @str.25, i32 0, i32 0)
+}
+
+@str.24 = internal constant [3 x i8] c"((\00", align 1
+@String.24 = constant %String {
+	%String_vtable* @String_vtable_prototype,
+	i8* getelementptr ([3 x i8], [3 x i8]* @str.24, i32 0, i32 0)
+}
+
+@str.23 = internal constant [4 x i8] c"};\0A\00", align 1
+@String.23 = constant %String {
+	%String_vtable* @String_vtable_prototype,
+	i8* getelementptr ([4 x i8], [4 x i8]* @str.23, i32 0, i32 0)
+}
+
+@str.22 = internal constant [6 x i8] c";}};\0A\00", align 1
+@String.22 = constant %String {
+	%String_vtable* @String_vtable_prototype,
+	i8* getelementptr ([6 x i8], [6 x i8]* @str.22, i32 0, i32 0)
+}
+
+@str.21 = internal constant [15 x i8] c"      x <- y;\0A\00", align 1
+@String.21 = constant %String {
+	%String_vtable* @String_vtable_prototype,
+	i8* getelementptr ([15 x i8], [15 x i8]* @str.21, i32 0, i32 0)
+}
+
+@str.20 = internal constant [7 x i8] c"\5Cn\22);\0A\00", align 1
+@String.20 = constant %String {
+	%String_vtable* @String_vtable_prototype,
+	i8* getelementptr ([7 x i8], [7 x i8]* @str.20, i32 0, i32 0)
+}
+
+@str.19 = internal constant [36 x i8] c"    { out_string(\22Applying closure \00", align 1
+@String.19 = constant %String {
+	%String_vtable* @String_vtable_prototype,
+	i8* getelementptr ([36 x i8], [36 x i8]* @str.19, i32 0, i32 0)
+}
+
+@str.18 = internal constant [40 x i8] c"  apply(y : EvalObject) : EvalObject {\0A\00", align 1
+@String.18 = constant %String {
+	%String_vtable* @String_vtable_prototype,
+	i8* getelementptr ([40 x i8], [40 x i8]* @str.18, i32 0, i32 0)
+}
+
+@str.17 = internal constant [21 x i8] c" inherits Closure {\0A\00", align 1
+@String.17 = constant %String {
+	%String_vtable* @String_vtable_prototype,
+	i8* getelementptr ([21 x i8], [21 x i8]* @str.17, i32 0, i32 0)
+}
+
+@str.16 = internal constant [14 x i8] c"class Closure\00", align 1
+@String.16 = constant %String {
+	%String_vtable* @String_vtable_prototype,
+	i8* getelementptr ([14 x i8], [14 x i8]* @str.16, i32 0, i32 0)
+}
+
+@str.15 = internal constant [7 x i8] c"self))\00", align 1
+@String.15 = constant %String {
+	%String_vtable* @String_vtable_prototype,
+	i8* getelementptr ([7 x i8], [7 x i8]* @str.15, i32 0, i32 0)
+}
+
+@str.14 = internal constant [14 x i8] c"new Closure))\00", align 1
+@String.14 = constant %String {
+	%String_vtable* @String_vtable_prototype,
+	i8* getelementptr ([14 x i8], [14 x i8]* @str.14, i32 0, i32 0)
+}
+
+@str.13 = internal constant [8 x i8] c").init(\00", align 1
+@String.13 = constant %String {
+	%String_vtable* @String_vtable_prototype,
+	i8* getelementptr ([8 x i8], [8 x i8]* @str.13, i32 0, i32 0)
+}
+
+@str.12 = internal constant [14 x i8] c"((new Closure\00", align 1
+@String.12 = constant %String {
+	%String_vtable* @String_vtable_prototype,
+	i8* getelementptr ([14 x i8], [14 x i8]* @str.12, i32 0, i32 0)
+}
+
+@str.11 = internal constant [2 x i8] c".\00", align 1
+@String.11 = constant %String {
+	%String_vtable* @String_vtable_prototype,
+	i8* getelementptr ([2 x i8], [2 x i8]* @str.11, i32 0, i32 0)
+}
+
+@str.10 = internal constant [2 x i8] c"\5C\00", align 1
+@String.10 = constant %String {
+	%String_vtable* @String_vtable_prototype,
+	i8* getelementptr ([2 x i8], [2 x i8]* @str.10, i32 0, i32 0)
+}
+
+@str.9 = internal constant [8 x i8] c"get_x()\00", align 1
+@String.9 = constant %String {
+	%String_vtable* @String_vtable_prototype,
+	i8* getelementptr ([8 x i8], [8 x i8]* @str.9, i32 0, i32 0)
+}
+
+@str.8 = internal constant [28 x i8] c"Error:  free occurrence of \00", align 1
+@String.8 = constant %String {
+	%String_vtable* @String_vtable_prototype,
+	i8* getelementptr ([28 x i8], [28 x i8]* @str.8, i32 0, i32 0)
+}
+
+@str.7 = internal constant [14 x i8] c"get_parent().\00", align 1
+@String.7 = constant %String {
+	%String_vtable* @String_vtable_prototype,
+	i8* getelementptr ([14 x i8], [14 x i8]* @str.7, i32 0, i32 0)
+}
+
+@str.6 = internal constant [46 x i8] c"\0AError: Expr is pure virtual; can't gen_code\0A\00", align 1
+@String.6 = constant %String {
+	%String_vtable* @String_vtable_prototype,
+	i8* getelementptr ([46 x i8], [46 x i8]* @str.6, i32 0, i32 0)
+}
+
+@str.5 = internal constant [48 x i8] c"\0AError: Expr is pure virtual; can't substitute\0A\00", align 1
+@String.5 = constant %String {
+	%String_vtable* @String_vtable_prototype,
+	i8* getelementptr ([48 x i8], [48 x i8]* @str.5, i32 0, i32 0)
+}
+
+@str.4 = internal constant [49 x i8] c"\0AError: Expr is pure virtual; can't beta-reduce\0A\00", align 1
+@String.4 = constant %String {
+	%String_vtable* @String_vtable_prototype,
+	i8* getelementptr ([49 x i8], [49 x i8]* @str.4, i32 0, i32 0)
+}
+
+@str.3 = internal constant [48 x i8] c"\0AError: Expr is pure virtual; can't print self\0A\00", align 1
+@String.3 = constant %String {
+	%String_vtable* @String_vtable_prototype,
+	i8* getelementptr ([48 x i8], [48 x i8]* @str.3, i32 0, i32 0)
+}
+
+@str.2 = internal constant [2 x i8] c" \00", align 1
+@String.2 = constant %String {
+	%String_vtable* @String_vtable_prototype,
+	i8* getelementptr ([2 x i8], [2 x i8]* @str.2, i32 0, i32 0)
+}
+
+@str.1 = internal constant [2 x i8] c"\0A\00", align 1
+@String.1 = constant %String {
+	%String_vtable* @String_vtable_prototype,
+	i8* getelementptr ([2 x i8], [2 x i8]* @str.1, i32 0, i32 0)
+}
+
+@str.0 = internal constant [7 x i8] c"lam.cl\00", align 1
+@String.0 = constant %String {
+	%String_vtable* @String_vtable_prototype,
+	i8* getelementptr ([7 x i8], [7 x i8]* @str.0, i32 0, i32 0)
+}
+
+define i32 @main() {
+entry:
+	%main.obj = call %Main*() @Main_new( )
+	%main.retval = call i32(%Main*) @Main_main( %Main* %main.obj )
+	ret i32 0
+}
+
+define i1 @VarList_isNil(%VarList* %self) {
+
+entry:
+	%tmp.0 = alloca %VarList*
+	store %VarList* %self, %VarList** %tmp.0
+	ret i1 true
+
+abort:
+	call void @abort(  )
+	unreachable
+}
+
+define %Variable* @VarList_head(%VarList* %self) {
+
+entry:
+	%tmp.1 = alloca %VarList*
+	store %VarList* %self, %VarList** %tmp.1
+	%tmp.2 = load %VarList*, %VarList** %tmp.1
+	%tmp.3 = icmp eq %VarList* %tmp.2, null
+	br i1 %tmp.3, label %abort, label %ok.0
+
+ok.0:
+	%tmp.4 = getelementptr %VarList, %VarList* %tmp.2, i32 0, i32 0
+	%tmp.5 = load %VarList_vtable*, %VarList_vtable** %tmp.4
+	%tmp.6 = getelementptr %VarList_vtable, %VarList_vtable* %tmp.5, i32 0, i32 4
+	%tmp.7 = load %Object* (%VarList*) *, %Object* (%VarList*) ** %tmp.6
+	%tmp.8 = call %Object*(%VarList*) %tmp.7( %VarList* %tmp.2 )
+	%tmp.9 = call %Variable* @Variable_new(  )
+	ret %Variable* %tmp.9
+
+abort:
+	call void @abort(  )
+	unreachable
+}
+
+define %VarList* @VarList_tail(%VarList* %self) {
+
+entry:
+	%tmp.10 = alloca %VarList*
+	store %VarList* %self, %VarList** %tmp.10
+	%tmp.11 = load %VarList*, %VarList** %tmp.10
+	%tmp.12 = icmp eq %VarList* %tmp.11, null
+	br i1 %tmp.12, label %abort, label %ok.1
+
+ok.1:
+	%tmp.13 = getelementptr %VarList, %VarList* %tmp.11, i32 0, i32 0
+	%tmp.14 = load %VarList_vtable*, %VarList_vtable** %tmp.13
+	%tmp.15 = getelementptr %VarList_vtable, %VarList_vtable* %tmp.14, i32 0, i32 4
+	%tmp.16 = load %Object* (%VarList*) *, %Object* (%VarList*) ** %tmp.15
+	%tmp.17 = call %Object*(%VarList*) %tmp.16( %VarList* %tmp.11 )
+	%tmp.18 = call %VarList* @VarList_new(  )
+	ret %VarList* %tmp.18
+
+abort:
+	call void @abort(  )
+	unreachable
+}
+
+define %VarList* @VarList_add(%VarList* %self, %Variable* %x) {
+
+entry:
+	%tmp.19 = alloca %VarList*
+	store %VarList* %self, %VarList** %tmp.19
+	%tmp.20 = alloca %Variable*
+	store %Variable* %x, %Variable** %tmp.20
+	%tmp.21 = load %Variable*, %Variable** %tmp.20
+	%tmp.22 = load %VarList*, %VarList** %tmp.19
+	%tmp.23 = call %VarListNE* @VarListNE_new(  )
+	%tmp.24 = icmp eq %VarListNE* %tmp.23, null
+	br i1 %tmp.24, label %abort, label %ok.2
+
+ok.2:
+	%tmp.25 = getelementptr %VarListNE, %VarListNE* %tmp.23, i32 0, i32 0
+	%tmp.26 = load %VarListNE_vtable*, %VarListNE_vtable** %tmp.25
+	%tmp.27 = getelementptr %VarListNE_vtable, %VarListNE_vtable* %tmp.26, i32 0, i32 16
+	%tmp.28 = load %VarListNE* (%VarListNE*,%Variable*,%VarList*) *, %VarListNE* (%VarListNE*,%Variable*,%VarList*) ** %tmp.27
+	%tmp.29 = call %VarListNE*(%VarListNE*, %Variable*, %VarList*) %tmp.28( %VarListNE* %tmp.23, %Variable* %tmp.21, %VarList* %tmp.22 )
+	%tmp.30 = bitcast %VarListNE* %tmp.29 to %VarList*
+	ret %VarList* %tmp.30
+
+abort:
+	call void @abort(  )
+	unreachable
+}
+
+define %VarList* @VarList_print(%VarList* %self) {
+
+entry:
+	%tmp.31 = alloca %VarList*
+	store %VarList* %self, %VarList** %tmp.31
+	%tmp.32 = load %VarList*, %VarList** %tmp.31
+	%tmp.33 = icmp eq %VarList* %tmp.32, null
+	br i1 %tmp.33, label %abort, label %ok.3
+
+ok.3:
+	%tmp.34 = getelementptr %VarList, %VarList* %tmp.32, i32 0, i32 0
+	%tmp.35 = load %VarList_vtable*, %VarList_vtable** %tmp.34
+	%tmp.36 = getelementptr %VarList_vtable, %VarList_vtable* %tmp.35, i32 0, i32 7
+	%tmp.37 = load %VarList* (%VarList*,%String*) *, %VarList* (%VarList*,%String*) ** %tmp.36
+	%tmp.38 = call %VarList*(%VarList*, %String*) %tmp.37( %VarList* %tmp.32, %String* @String.1 )
+	ret %VarList* %tmp.38
+
+abort:
+	call void @abort(  )
+	unreachable
+}
+
+define %VarList* @VarList_new() {
+
+entry:
+	%tmp.39 = getelementptr %VarList_vtable, %VarList_vtable* @VarList_vtable_prototype, i32 0, i32 1
+	%tmp.40 = load i32, i32* %tmp.39
+	%tmp.41 = call i8*(i32) @malloc( i32 %tmp.40 )
+	%tmp.42 = bitcast i8* %tmp.41 to %VarList*
+	%tmp.43 = getelementptr %VarList, %VarList* %tmp.42, i32 0, i32 0
+	store %VarList_vtable* @VarList_vtable_prototype, %VarList_vtable** %tmp.43
+	%tmp.44 = alloca %VarList*
+	store %VarList* %tmp.42, %VarList** %tmp.44
+	ret %VarList* %tmp.42
+
+abort:
+	call void @abort(  )
+	unreachable
+}
+
+define i1 @VarListNE_isNil(%VarListNE* %self) {
+
+entry:
+	%tmp.0 = alloca %VarListNE*
+	store %VarListNE* %self, %VarListNE** %tmp.0
+	ret i1 false
+
+abort:
+	call void @abort(  )
+	unreachable
+}
+
+define %Variable* @VarListNE_head(%VarListNE* %self) {
+
+entry:
+	%tmp.1 = alloca %VarListNE*
+	store %VarListNE* %self, %VarListNE** %tmp.1
+	%tmp.2 = load %VarListNE*, %VarListNE** %tmp.1
+	%tmp.3 = getelementptr %VarListNE, %VarListNE* %tmp.2, i32 0, i32 1
+	%tmp.4 = load %Variable*, %Variable** %tmp.3
+	ret %Variable* %tmp.4
+
+abort:
+	call void @abort(  )
+	unreachable
+}
+
+define %VarList* @VarListNE_tail(%VarListNE* %self) {
+
+entry:
+	%tmp.5 = alloca %VarListNE*
+	store %VarListNE* %self, %VarListNE** %tmp.5
+	%tmp.6 = load %VarListNE*, %VarListNE** %tmp.5
+	%tmp.7 = getelementptr %VarListNE, %VarListNE* %tmp.6, i32 0, i32 2
+	%tmp.8 = load %VarList*, %VarList** %tmp.7
+	ret %VarList* %tmp.8
+
+abort:
+	call void @abort(  )
+	unreachable
+}
+
+define %VarListNE* @VarListNE_init(%VarListNE* %self, %Variable* %y, %VarList* %r) {
+
+entry:
+	%tmp.9 = alloca %VarListNE*
+	store %VarListNE* %self, %VarListNE** %tmp.9
+	%tmp.10 = alloca %Variable*
+	store %Variable* %y, %Variable** %tmp.10
+	%tmp.11 = alloca %VarList*
+	store %VarList* %r, %VarList** %tmp.11
+	%tmp.12 = load %Variable*, %Variable** %tmp.10
+	%tmp.13 = load %VarListNE*, %VarListNE** %tmp.9
+	%tmp.14 = getelementptr %VarListNE, %VarListNE* %tmp.13, i32 0, i32 1
+	store %Variable* %tmp.12, %Variable** %tmp.14
+	%tmp.15 = load %VarList*, %VarList** %tmp.11
+	%tmp.16 = load %VarListNE*, %VarListNE** %tmp.9
+	%tmp.17 = getelementptr %VarListNE, %VarListNE* %tmp.16, i32 0, i32 2
+	store %VarList* %tmp.15, %VarList** %tmp.17
+	%tmp.18 = load %VarListNE*, %VarListNE** %tmp.9
+	ret %VarListNE* %tmp.18
+
+abort:
+	call void @abort(  )
+	unreachable
+}
+
+define %VarListNE* @VarListNE_print(%VarListNE* %self) {
+
+entry:
+	%tmp.19 = alloca %VarListNE*
+	store %VarListNE* %self, %VarListNE** %tmp.19
+	%tmp.20 = load %VarListNE*, %VarListNE** %tmp.19
+	%tmp.21 = getelementptr %VarListNE, %VarListNE* %tmp.20, i32 0, i32 1
+	%tmp.22 = load %Variable*, %Variable** %tmp.21
+	%tmp.23 = icmp eq %Variable* %tmp.22, null
+	br i1 %tmp.23, label %abort, label %ok.0
+
+ok.0:
+	%tmp.24 = getelementptr %Variable, %Variable* %tmp.22, i32 0, i32 0
+	%tmp.25 = load %Variable_vtable*, %Variable_vtable** %tmp.24
+	%tmp.26 = getelementptr %Variable_vtable, %Variable_vtable* %tmp.25, i32 0, i32 11
+	%tmp.27 = load %Variable* (%Variable*) *, %Variable* (%Variable*) ** %tmp.26
+	%tmp.28 = call %Variable*(%Variable*) %tmp.27( %Variable* %tmp.22 )
+	%tmp.29 = load %VarListNE*, %VarListNE** %tmp.19
+	%tmp.30 = icmp eq %VarListNE* %tmp.29, null
+	br i1 %tmp.30, label %abort, label %ok.1
+
+ok.1:
+	%tmp.31 = getelementptr %VarListNE, %VarListNE* %tmp.29, i32 0, i32 0
+	%tmp.32 = load %VarListNE_vtable*, %VarListNE_vtable** %tmp.31
+	%tmp.33 = getelementptr %VarListNE_vtable, %VarListNE_vtable* %tmp.32, i32 0, i32 7
+	%tmp.34 = load %VarListNE* (%VarListNE*,%String*) *, %VarListNE* (%VarListNE*,%String*) ** %tmp.33
+	%tmp.35 = call %VarListNE*(%VarListNE*, %String*) %tmp.34( %VarListNE* %tmp.29, %String* @String.2 )
+	%tmp.36 = load %VarListNE*, %VarListNE** %tmp.19
+	%tmp.37 = getelementptr %VarListNE, %VarListNE* %tmp.36, i32 0, i32 2
+	%tmp.38 = load %VarList*, %VarList** %tmp.37
+	%tmp.39 = icmp eq %VarList* %tmp.38, null
+	br i1 %tmp.39, label %abort, label %ok.2
+
+ok.2:
+	%tmp.40 = getelementptr %VarList, %VarList* %tmp.38, i32 0, i32 0
+	%tmp.41 = load %VarList_vtable*, %VarList_vtable** %tmp.40
+	%tmp.42 = getelementptr %VarList_vtable, %VarList_vtable* %tmp.41, i32 0, i32 15
+	%tmp.43 = load %VarList* (%VarList*) *, %VarList* (%VarList*) ** %tmp.42
+	%tmp.44 = call %VarList*(%VarList*) %tmp.43( %VarList* %tmp.38 )
+	%tmp.45 = load %VarListNE*, %VarListNE** %tmp.19
+	ret %VarListNE* %tmp.45
+
+abort:
+	call void @abort(  )
+	unreachable
+}
+
+define %VarListNE* @VarListNE_new() {
+
+entry:
+	%tmp.46 = getelementptr %VarListNE_vtable, %VarListNE_vtable* @VarListNE_vtable_prototype, i32 0, i32 1
+	%tmp.47 = load i32, i32* %tmp.46
+	%tmp.48 = call i8*(i32) @malloc( i32 %tmp.47 )
+	%tmp.49 = bitcast i8* %tmp.48 to %VarListNE*
+	%tmp.50 = getelementptr %VarListNE, %VarListNE* %tmp.49, i32 0, i32 0
+	store %VarListNE_vtable* @VarListNE_vtable_prototype, %VarListNE_vtable** %tmp.50
+	%tmp.51 = alloca %VarListNE*
+	store %VarListNE* %tmp.49, %VarListNE** %tmp.51
+	%tmp.52 = getelementptr %VarListNE, %VarListNE* %tmp.49, i32 0, i32 1
+	store %Variable* null, %Variable** %tmp.52
+	%tmp.53 = getelementptr %VarListNE, %VarListNE* %tmp.49, i32 0, i32 2
+	store %VarList* null, %VarList** %tmp.53
+	ret %VarListNE* %tmp.49
+
+abort:
+	call void @abort(  )
+	unreachable
+}
+
+define %Expr* @Expr_print_self(%Expr* %self) {
+
+entry:
+	%tmp.0 = alloca %Expr*
+	store %Expr* %self, %Expr** %tmp.0
+	%tmp.1 = load %Expr*, %Expr** %tmp.0
+	%tmp.2 = icmp eq %Expr* %tmp.1, null
+	br i1 %tmp.2, label %abort, label %ok.0
+
+ok.0:
+	%tmp.3 = getelementptr %Expr, %Expr* %tmp.1, i32 0, i32 0
+	%tmp.4 = load %Expr_vtable*, %Expr_vtable** %tmp.3
+	%tmp.5 = getelementptr %Expr_vtable, %Expr_vtable* %tmp.4, i32 0, i32 7
+	%tmp.6 = load %Expr* (%Expr*,%String*) *, %Expr* (%Expr*,%String*) ** %tmp.5
+	%tmp.7 = call %Expr*(%Expr*, %String*) %tmp.6( %Expr* %tmp.1, %String* @String.3 )
+	%tmp.8 = load %Expr*, %Expr** %tmp.0
+	%tmp.9 = icmp eq %Expr* %tmp.8, null
+	br i1 %tmp.9, label %abort, label %ok.1
+
+ok.1:
+	%tmp.10 = getelementptr %Expr, %Expr* %tmp.8, i32 0, i32 0
+	%tmp.11 = load %Expr_vtable*, %Expr_vtable** %tmp.10
+	%tmp.12 = getelementptr %Expr_vtable, %Expr_vtable* %tmp.11, i32 0, i32 4
+	%tmp.13 = load %Object* (%Expr*) *, %Object* (%Expr*) ** %tmp.12
+	%tmp.14 = call %Object*(%Expr*) %tmp.13( %Expr* %tmp.8 )
+	%tmp.15 = load %Expr*, %Expr** %tmp.0
+	ret %Expr* %tmp.15
+
+abort:
+	call void @abort(  )
+	unreachable
+}
+
+define %Expr* @Expr_beta(%Expr* %self) {
+
+entry:
+	%tmp.16 = alloca %Expr*
+	store %Expr* %self, %Expr** %tmp.16
+	%tmp.17 = load %Expr*, %Expr** %tmp.16
+	%tmp.18 = icmp eq %Expr* %tmp.17, null
+	br i1 %tmp.18, label %abort, label %ok.2
+
+ok.2:
+	%tmp.19 = getelementptr %Expr, %Expr* %tmp.17, i32 0, i32 0
+	%tmp.20 = load %Expr_vtable*, %Expr_vtable** %tmp.19
+	%tmp.21 = getelementptr %Expr_vtable, %Expr_vtable* %tmp.20, i32 0, i32 7
+	%tmp.22 = load %Expr* (%Expr*,%String*) *, %Expr* (%Expr*,%String*) ** %tmp.21
+	%tmp.23 = call %Expr*(%Expr*, %String*) %tmp.22( %Expr* %tmp.17, %String* @String.4 )
+	%tmp.24 = load %Expr*, %Expr** %tmp.16
+	%tmp.25 = icmp eq %Expr* %tmp.24, null
+	br i1 %tmp.25, label %abort, label %ok.3
+
+ok.3:
+	%tmp.26 = getelementptr %Expr, %Expr* %tmp.24, i32 0, i32 0
+	%tmp.27 = load %Expr_vtable*, %Expr_vtable** %tmp.26
+	%tmp.28 = getelementptr %Expr_vtable, %Expr_vtable* %tmp.27, i32 0, i32 4
+	%tmp.29 = load %Object* (%Expr*) *, %Object* (%Expr*) ** %tmp.28
+	%tmp.30 = call %Object*(%Expr*) %tmp.29( %Expr* %tmp.24 )
+	%tmp.31 = load %Expr*, %Expr** %tmp.16
+	ret %Expr* %tmp.31
+
+abort:
+	call void @abort(  )
+	unreachable
+}
+
+define %Expr* @Expr_substitute(%Expr* %self, %Variable* %x, %Expr* %e) {
+
+entry:
+	%tmp.32 = alloca %Expr*
+	store %Expr* %self, %Expr** %tmp.32
+	%tmp.33 = alloca %Variable*
+	store %Variable* %x, %Variable** %tmp.33
+	%tmp.34 = alloca %Expr*
+	store %Expr* %e, %Expr** %tmp.34
+	%tmp.35 = load %Expr*, %Expr** %tmp.32
+	%tmp.36 = icmp eq %Expr* %tmp.35, null
+	br i1 %tmp.36, label %abort, label %ok.4
+
+ok.4:
+	%tmp.37 = getelementptr %Expr, %Expr* %tmp.35, i32 0, i32 0
+	%tmp.38 = load %Expr_vtable*, %Expr_vtable** %tmp.37
+	%tmp.39 = getelementptr %Expr_vtable, %Expr_vtable* %tmp.38, i32 0, i32 7
+	%tmp.40 = load %Expr* (%Expr*,%String*) *, %Expr* (%Expr*,%String*) ** %tmp.39
+	%tmp.41 = call %Expr*(%Expr*, %String*) %tmp.40( %Expr* %tmp.35, %String* @String.5 )
+	%tmp.42 = load %Expr*, %Expr** %tmp.32
+	%tmp.43 = icmp eq %Expr* %tmp.42, null
+	br i1 %tmp.43, label %abort, label %ok.5
+
+ok.5:
+	%tmp.44 = getelementptr %Expr, %Expr* %tmp.42, i32 0, i32 0
+	%tmp.45 = load %Expr_vtable*, %Expr_vtable** %tmp.44
+	%tmp.46 = getelementptr %Expr_vtable, %Expr_vtable* %tmp.45, i32 0, i32 4
+	%tmp.47 = load %Object* (%Expr*) *, %Object* (%Expr*) ** %tmp.46
+	%tmp.48 = call %Object*(%Expr*) %tmp.47( %Expr* %tmp.42 )
+	%tmp.49 = load %Expr*, %Expr** %tmp.32
+	ret %Expr* %tmp.49
+
+abort:
+	call void @abort(  )
+	unreachable
+}
+
+define %Expr* @Expr_gen_code(%Expr* %self, %VarList* %env, %LambdaListRef* %closures) {
+
+entry:
+	%tmp.50 = alloca %Expr*
+	store %Expr* %self, %Expr** %tmp.50
+	%tmp.51 = alloca %VarList*
+	store %VarList* %env, %VarList** %tmp.51
+	%tmp.52 = alloca %LambdaListRef*
+	store %LambdaListRef* %closures, %LambdaListRef** %tmp.52
+	%tmp.53 = load %Expr*, %Expr** %tmp.50
+	%tmp.54 = icmp eq %Expr* %tmp.53, null
+	br i1 %tmp.54, label %abort, label %ok.6
+
+ok.6:
+	%tmp.55 = getelementptr %Expr, %Expr* %tmp.53, i32 0, i32 0
+	%tmp.56 = load %Expr_vtable*, %Expr_vtable** %tmp.55
+	%tmp.57 = getelementptr %Expr_vtable, %Expr_vtable* %tmp.56, i32 0, i32 7
+	%tmp.58 = load %Expr* (%Expr*,%String*) *, %Expr* (%Expr*,%String*) ** %tmp.57
+	%tmp.59 = call %Expr*(%Expr*, %String*) %tmp.58( %Expr* %tmp.53, %String* @String.6 )
+	%tmp.60 = load %Expr*, %Expr** %tmp.50
+	%tmp.61 = icmp eq %Expr* %tmp.60, null
+	br i1 %tmp.61, label %abort, label %ok.7
+
+ok.7:
+	%tmp.62 = getelementptr %Expr, %Expr* %tmp.60, i32 0, i32 0
+	%tmp.63 = load %Expr_vtable*, %Expr_vtable** %tmp.62
+	%tmp.64 = getelementptr %Expr_vtable, %Expr_vtable* %tmp.63, i32 0, i32 4
+	%tmp.65 = load %Object* (%Expr*) *, %Object* (%Expr*) ** %tmp.64
+	%tmp.66 = call %Object*(%Expr*) %tmp.65( %Expr* %tmp.60 )
+	%tmp.67 = load %Expr*, %Expr** %tmp.50
+	ret %Expr* %tmp.67
+
+abort:
+	call void @abort(  )
+	unreachable
+}
+
+define %Expr* @Expr_new() {
+
+entry:
+	%tmp.68 = getelementptr %Expr_vtable, %Expr_vtable* @Expr_vtable_prototype, i32 0, i32 1
+	%tmp.69 = load i32, i32* %tmp.68
+	%tmp.70 = call i8*(i32) @malloc( i32 %tmp.69 )
+	%tmp.71 = bitcast i8* %tmp.70 to %Expr*
+	%tmp.72 = getelementptr %Expr, %Expr* %tmp.71, i32 0, i32 0
+	store %Expr_vtable* @Expr_vtable_prototype, %Expr_vtable** %tmp.72
+	%tmp.73 = alloca %Expr*
+	store %Expr* %tmp.71, %Expr** %tmp.73
+	ret %Expr* %tmp.71
+
+abort:
+	call void @abort(  )
+	unreachable
+}
+
+define %Variable* @Variable_init(%Variable* %self, %String* %n) {
+
+entry:
+	%tmp.0 = alloca %Variable*
+	store %Variable* %self, %Variable** %tmp.0
+	%tmp.1 = alloca %String*
+	store %String* %n, %String** %tmp.1
+	%tmp.2 = load %String*, %String** %tmp.1
+	%tmp.3 = load %Variable*, %Variable** %tmp.0
+	%tmp.4 = getelementptr %Variable, %Variable* %tmp.3, i32 0, i32 1
+	store %String* %tmp.2, %String** %tmp.4
+	%tmp.5 = load %Variable*, %Variable** %tmp.0
+	ret %Variable* %tmp.5
+
+abort:
+	call void @abort(  )
+	unreachable
+}
+
+define %Variable* @Variable_print_self(%Variable* %self) {
+
+entry:
+	%tmp.6 = alloca %Variable*
+	store %Variable* %self, %Variable** %tmp.6
+	%tmp.7 = load %Variable*, %Variable** %tmp.6
+	%tmp.8 = getelementptr %Variable, %Variable* %tmp.7, i32 0, i32 1
+	%tmp.9 = load %String*, %String** %tmp.8
+	%tmp.10 = load %Variable*, %Variable** %tmp.6
+	%tmp.11 = icmp eq %Variable* %tmp.10, null
+	br i1 %tmp.11, label %abort, label %ok.0
+
+ok.0:
+	%tmp.12 = getelementptr %Variable, %Variable* %tmp.10, i32 0, i32 0
+	%tmp.13 = load %Variable_vtable*, %Variable_vtable** %tmp.12
+	%tmp.14 = getelementptr %Variable_vtable, %Variable_vtable* %tmp.13, i32 0, i32 7
+	%tmp.15 = load %Variable* (%Variable*,%String*) *, %Variable* (%Variable*,%String*) ** %tmp.14
+	%tmp.16 = call %Variable*(%Variable*, %String*) %tmp.15( %Variable* %tmp.10, %String* %tmp.9 )
+	ret %Variable* %tmp.16
+
+abort:
+	call void @abort(  )
+	unreachable
+}
+
+define %Expr* @Variable_beta(%Variable* %self) {
+
+entry:
+	%tmp.17 = alloca %Variable*
+	store %Variable* %self, %Variable** %tmp.17
+	%tmp.18 = load %Variable*, %Variable** %tmp.17
+	%tmp.19 = bitcast %Variable* %tmp.18 to %Expr*
+	ret %Expr* %tmp.19
+
+abort:
+	call void @abort(  )
+	unreachable
+}
+
+define %Expr* @Variable_substitute(%Variable* %self, %Variable* %x, %Expr* %e) {
+
+entry:
+	%tmp.20 = alloca %Variable*
+	store %Variable* %self, %Variable** %tmp.20
+	%tmp.21 = alloca %Variable*
+	store %Variable* %x, %Variable** %tmp.21
+	%tmp.22 = alloca %Expr*
+	store %Expr* %e, %Expr** %tmp.22
+	%tmp.23 = alloca %Expr*
+	%tmp.24 = load %Variable*, %Variable** %tmp.21
+	%tmp.25 = load %Variable*, %Variable** %tmp.20
+	%tmp.26 = icmp eq %Variable* %tmp.24, %tmp.25
+	br i1 %tmp.26, label %true.0, label %false.0
+
+true.0:
+	%tmp.27 = load %Expr*, %Expr** %tmp.22
+	store %Expr* %tmp.27, %Expr** %tmp.23
+	br label %end.0
+
+false.0:
+	%tmp.28 = load %Variable*, %Variable** %tmp.20
+	%tmp.29 = bitcast %Variable* %tmp.28 to %Expr*
+	store %Expr* %tmp.29, %Expr** %tmp.23
+	br label %end.0
+
+end.0:
+	%tmp.30 = load %Expr*, %Expr** %tmp.23
+	ret %Expr* %tmp.30
+
+abort:
+	call void @abort(  )
+	unreachable
+}
+
+define %Variable* @Variable_gen_code(%Variable* %self, %VarList* %env, %LambdaListRef* %closures) {
+
+entry:
+	%tmp.31 = alloca %Variable*
+	store %Variable* %self, %Variable** %tmp.31
+	%tmp.32 = alloca %VarList*
+	store %VarList* %env, %VarList** %tmp.32
+	%tmp.33 = alloca %LambdaListRef*
+	store %LambdaListRef* %closures, %LambdaListRef** %tmp.33
+	%tmp.34 = load %VarList*, %VarList** %tmp.32
+	%tmp.35 = alloca %VarList*
+	store %VarList* %tmp.34, %VarList** %tmp.35
+	br label %loop.1
+
+loop.1:
+	%tmp.36 = alloca i1
+	%tmp.37 = load %VarList*, %VarList** %tmp.35
+	%tmp.38 = icmp eq %VarList* %tmp.37, null
+	br i1 %tmp.38, label %abort, label %ok.1
+
+ok.1:
+	%tmp.39 = getelementptr %VarList, %VarList* %tmp.37, i32 0, i32 0
+	%tmp.40 = load %VarList_vtable*, %VarList_vtable** %tmp.39
+	%tmp.41 = getelementptr %VarList_vtable, %VarList_vtable* %tmp.40, i32 0, i32 11
+	%tmp.42 = load i1 (%VarList*) *, i1 (%VarList*) ** %tmp.41
+	%tmp.43 = call i1(%VarList*) %tmp.42( %VarList* %tmp.37 )
+	br i1 %tmp.43, label %true.2, label %false.2
+
+true.2:
+	store i1 false, i1* %tmp.36
+	br label %end.2
+
+false.2:
+	%tmp.44 = load %VarList*, %VarList** %tmp.35
+	%tmp.45 = icmp eq %VarList* %tmp.44, null
+	br i1 %tmp.45, label %abort, label %ok.2
+
+ok.2:
+	%tmp.46 = getelementptr %VarList, %VarList* %tmp.44, i32 0, i32 0
+	%tmp.47 = load %VarList_vtable*, %VarList_vtable** %tmp.46
+	%tmp.48 = getelementptr %VarList_vtable, %VarList_vtable* %tmp.47, i32 0, i32 12
+	%tmp.49 = load %Variable* (%VarList*) *, %Variable* (%VarList*) ** %tmp.48
+	%tmp.50 = call %Variable*(%VarList*) %tmp.49( %VarList* %tmp.44 )
+	%tmp.51 = load %Variable*, %Variable** %tmp.31
+	%tmp.52 = icmp eq %Variable* %tmp.50, %tmp.51
+	%tmp.53 = xor i1 %tmp.52, true
+	store i1 %tmp.53, i1* %tmp.36
+	br label %end.2
+
+end.2:
+	%tmp.54 = load i1, i1* %tmp.36
+	br i1 %tmp.54, label %true.1, label %false.1
+
+true.1:
+	%tmp.55 = load %Variable*, %Variable** %tmp.31
+	%tmp.56 = icmp eq %Variable* %tmp.55, null
+	br i1 %tmp.56, label %abort, label %ok.3
+
+ok.3:
+	%tmp.57 = getelementptr %Variable, %Variable* %tmp.55, i32 0, i32 0
+	%tmp.58 = load %Variable_vtable*, %Variable_vtable** %tmp.57
+	%tmp.59 = getelementptr %Variable_vtable, %Variable_vtable* %tmp.58, i32 0, i32 7
+	%tmp.60 = load %Variable* (%Variable*,%String*) *, %Variable* (%Variable*,%String*) ** %tmp.59
+	%tmp.61 = call %Variable*(%Variable*, %String*) %tmp.60( %Variable* %tmp.55, %String* @String.7 )
+	%tmp.62 = load %VarList*, %VarList** %tmp.35
+	%tmp.63 = icmp eq %VarList* %tmp.62, null
+	br i1 %tmp.63, label %abort, label %ok.4
+
+ok.4:
+	%tmp.64 = getelementptr %VarList, %VarList* %tmp.62, i32 0, i32 0
+	%tmp.65 = load %VarList_vtable*, %VarList_vtable** %tmp.64
+	%tmp.66 = getelementptr %VarList_vtable, %VarList_vtable* %tmp.65, i32 0, i32 13
+	%tmp.67 = load %VarList* (%VarList*) *, %VarList* (%VarList*) ** %tmp.66
+	%tmp.68 = call %VarList*(%VarList*) %tmp.67( %VarList* %tmp.62 )
+	store %VarList* %tmp.68, %VarList** %tmp.35
+	br label %loop.1
+
+false.1:
+	%tmp.69 = alloca %Variable*
+	%tmp.70 = load %VarList*, %VarList** %tmp.35
+	%tmp.71 = icmp eq %VarList* %tmp.70, null
+	br i1 %tmp.71, label %abort, label %ok.5
+
+ok.5:
+	%tmp.72 = getelementptr %VarList, %VarList* %tmp.70, i32 0, i32 0
+	%tmp.73 = load %VarList_vtable*, %VarList_vtable** %tmp.72
+	%tmp.74 = getelementptr %VarList_vtable, %VarList_vtable* %tmp.73, i32 0, i32 11
+	%tmp.75 = load i1 (%VarList*) *, i1 (%VarList*) ** %tmp.74
+	%tmp.76 = call i1(%VarList*) %tmp.75( %VarList* %tmp.70 )
+	br i1 %tmp.76, label %true.3, label %false.3
+
+true.3:
+	%tmp.77 = load %Variable*, %Variable** %tmp.31
+	%tmp.78 = icmp eq %Variable* %tmp.77, null
+	br i1 %tmp.78, label %abort, label %ok.6
+
+ok.6:
+	%tmp.79 = getelementptr %Variable, %Variable* %tmp.77, i32 0, i32 0
+	%tmp.80 = load %Variable_vtable*, %Variable_vtable** %tmp.79
+	%tmp.81 = getelementptr %Variable_vtable, %Variable_vtable* %tmp.80, i32 0, i32 7
+	%tmp.82 = load %Variable* (%Variable*,%String*) *, %Variable* (%Variable*,%String*) ** %tmp.81
+	%tmp.83 = call %Variable*(%Variable*, %String*) %tmp.82( %Variable* %tmp.77, %String* @String.8 )
+	%tmp.84 = load %Variable*, %Variable** %tmp.31
+	%tmp.85 = icmp eq %Variable* %tmp.84, null
+	br i1 %tmp.85, label %abort, label %ok.7
+
+ok.7:
+	%tmp.86 = getelementptr %Variable, %Variable* %tmp.84, i32 0, i32 0
+	%tmp.87 = load %Variable_vtable*, %Variable_vtable** %tmp.86
+	%tmp.88 = getelementptr %Variable_vtable, %Variable_vtable* %tmp.87, i32 0, i32 11
+	%tmp.89 = load %Variable* (%Variable*) *, %Variable* (%Variable*) ** %tmp.88
+	%tmp.90 = call %Variable*(%Variable*) %tmp.89( %Variable* %tmp.84 )
+	%tmp.91 = load %Variable*, %Variable** %tmp.31
+	%tmp.92 = icmp eq %Variable* %tmp.91, null
+	br i1 %tmp.92, label %abort, label %ok.8
+
+ok.8:
+	%tmp.93 = getelementptr %Variable, %Variable* %tmp.91, i32 0, i32 0
+	%tmp.94 = load %Variable_vtable*, %Variable_vtable** %tmp.93
+	%tmp.95 = getelementptr %Variable_vtable, %Variable_vtable* %tmp.94, i32 0, i32 7
+	%tmp.96 = load %Variable* (%Variable*,%String*) *, %Variable* (%Variable*,%String*) ** %tmp.95
+	%tmp.97 = call %Variable*(%Variable*, %String*) %tmp.96( %Variable* %tmp.91, %String* @String.1 )
+	%tmp.98 = load %Variable*, %Variable** %tmp.31
+	%tmp.99 = icmp eq %Variable* %tmp.98, null
+	br i1 %tmp.99, label %abort, label %ok.9
+
+ok.9:
+	%tmp.100 = getelementptr %Variable, %Variable* %tmp.98, i32 0, i32 0
+	%tmp.101 = load %Variable_vtable*, %Variable_vtable** %tmp.100
+	%tmp.102 = getelementptr %Variable_vtable, %Variable_vtable* %tmp.101, i32 0, i32 4
+	%tmp.103 = load %Object* (%Variable*) *, %Object* (%Variable*) ** %tmp.102
+	%tmp.104 = call %Object*(%Variable*) %tmp.103( %Variable* %tmp.98 )
+	%tmp.105 = load %Variable*, %Variable** %tmp.31
+	store %Variable* %tmp.105, %Variable** %tmp.69
+	br label %end.3
+
+false.3:
+	%tmp.106 = load %Variable*, %Variable** %tmp.31
+	%tmp.107 = icmp eq %Variable* %tmp.106, null
+	br i1 %tmp.107, label %abort, label %ok.10
+
+ok.10:
+	%tmp.108 = getelementptr %Variable, %Variable* %tmp.106, i32 0, i32 0
+	%tmp.109 = load %Variable_vtable*, %Variable_vtable** %tmp.108
+	%tmp.110 = getelementptr %Variable_vtable, %Variable_vtable* %tmp.109, i32 0, i32 7
+	%tmp.111 = load %Variable* (%Variable*,%String*) *, %Variable* (%Variable*,%String*) ** %tmp.110
+	%tmp.112 = call %Variable*(%Variable*, %String*) %tmp.111( %Variable* %tmp.106, %String* @String.9 )
+	store %Variable* %tmp.112, %Variable** %tmp.69
+	br label %end.3
+
+end.3:
+	%tmp.113 = load %Variable*, %Variable** %tmp.69
+	ret %Variable* %tmp.113
+
+abort:
+	call void @abort(  )
+	unreachable
+}
+
+define %Variable* @Variable_new() {
+
+entry:
+	%tmp.114 = getelementptr %Variable_vtable, %Variable_vtable* @Variable_vtable_prototype, i32 0, i32 1
+	%tmp.115 = load i32, i32* %tmp.114
+	%tmp.116 = call i8*(i32) @malloc( i32 %tmp.115 )
+	%tmp.117 = bitcast i8* %tmp.116 to %Variable*
+	%tmp.118 = getelementptr %Variable, %Variable* %tmp.117, i32 0, i32 0
+	store %Variable_vtable* @Variable_vtable_prototype, %Variable_vtable** %tmp.118
+	%tmp.119 = alloca %Variable*
+	store %Variable* %tmp.117, %Variable** %tmp.119
+	%tmp.120 = getelementptr %Variable, %Variable* %tmp.117, i32 0, i32 1
+	%tmp.121 = call %String* @String_new(  )
+	store %String* %tmp.121, %String** %tmp.120
+	ret %Variable* %tmp.117
+
+abort:
+	call void @abort(  )
+	unreachable
+}
+
+define %Lambda* @Lambda_init(%Lambda* %self, %Variable* %a, %Expr* %b) {
+
+entry:
+	%tmp.0 = alloca %Lambda*
+	store %Lambda* %self, %Lambda** %tmp.0
+	%tmp.1 = alloca %Variable*
+	store %Variable* %a, %Variable** %tmp.1
+	%tmp.2 = alloca %Expr*
+	store %Expr* %b, %Expr** %tmp.2
+	%tmp.3 = load %Variable*, %Variable** %tmp.1
+	%tmp.4 = load %Lambda*, %Lambda** %tmp.0
+	%tmp.5 = getelementptr %Lambda, %Lambda* %tmp.4, i32 0, i32 1
+	store %Variable* %tmp.3, %Variable** %tmp.5
+	%tmp.6 = load %Expr*, %Expr** %tmp.2
+	%tmp.7 = load %Lambda*, %Lambda** %tmp.0
+	%tmp.8 = getelementptr %Lambda, %Lambda* %tmp.7, i32 0, i32 2
+	store %Expr* %tmp.6, %Expr** %tmp.8
+	%tmp.9 = load %Lambda*, %Lambda** %tmp.0
+	ret %Lambda* %tmp.9
+
+abort:
+	call void @abort(  )
+	unreachable
+}
+
+define %Lambda* @Lambda_print_self(%Lambda* %self) {
+
+entry:
+	%tmp.10 = alloca %Lambda*
+	store %Lambda* %self, %Lambda** %tmp.10
+	%tmp.11 = load %Lambda*, %Lambda** %tmp.10
+	%tmp.12 = icmp eq %Lambda* %tmp.11, null
+	br i1 %tmp.12, label %abort, label %ok.0
+
+ok.0:
+	%tmp.13 = getelementptr %Lambda, %Lambda* %tmp.11, i32 0, i32 0
+	%tmp.14 = load %Lambda_vtable*, %Lambda_vtable** %tmp.13
+	%tmp.15 = getelementptr %Lambda_vtable, %Lambda_vtable* %tmp.14, i32 0, i32 7
+	%tmp.16 = load %Lambda* (%Lambda*,%String*) *, %Lambda* (%Lambda*,%String*) ** %tmp.15
+	%tmp.17 = call %Lambda*(%Lambda*, %String*) %tmp.16( %Lambda* %tmp.11, %String* @String.10 )
+	%tmp.18 = load %Lambda*, %Lambda** %tmp.10
+	%tmp.19 = getelementptr %Lambda, %Lambda* %tmp.18, i32 0, i32 1
+	%tmp.20 = load %Variable*, %Variable** %tmp.19
+	%tmp.21 = icmp eq %Variable* %tmp.20, null
+	br i1 %tmp.21, label %abort, label %ok.1
+
+ok.1:
+	%tmp.22 = getelementptr %Variable, %Variable* %tmp.20, i32 0, i32 0
+	%tmp.23 = load %Variable_vtable*, %Variable_vtable** %tmp.22
+	%tmp.24 = getelementptr %Variable_vtable, %Variable_vtable* %tmp.23, i32 0, i32 11
+	%tmp.25 = load %Variable* (%Variable*) *, %Variable* (%Variable*) ** %tmp.24
+	%tmp.26 = call %Variable*(%Variable*) %tmp.25( %Variable* %tmp.20 )
+	%tmp.27 = load %Lambda*, %Lambda** %tmp.10
+	%tmp.28 = icmp eq %Lambda* %tmp.27, null
+	br i1 %tmp.28, label %abort, label %ok.2
+
+ok.2:
+	%tmp.29 = getelementptr %Lambda, %Lambda* %tmp.27, i32 0, i32 0
+	%tmp.30 = load %Lambda_vtable*, %Lambda_vtable** %tmp.29
+	%tmp.31 = getelementptr %Lambda_vtable, %Lambda_vtable* %tmp.30, i32 0, i32 7
+	%tmp.32 = load %Lambda* (%Lambda*,%String*) *, %Lambda* (%Lambda*,%String*) ** %tmp.31
+	%tmp.33 = call %Lambda*(%Lambda*, %String*) %tmp.32( %Lambda* %tmp.27, %String* @String.11 )
+	%tmp.34 = load %Lambda*, %Lambda** %tmp.10
+	%tmp.35 = getelementptr %Lambda, %Lambda* %tmp.34, i32 0, i32 2
+	%tmp.36 = load %Expr*, %Expr** %tmp.35
+	%tmp.37 = icmp eq %Expr* %tmp.36, null
+	br i1 %tmp.37, label %abort, label %ok.3
+
+ok.3:
+	%tmp.38 = getelementptr %Expr, %Expr* %tmp.36, i32 0, i32 0
+	%tmp.39 = load %Expr_vtable*, %Expr_vtable** %tmp.38
+	%tmp.40 = getelementptr %Expr_vtable, %Expr_vtable* %tmp.39, i32 0, i32 11
+	%tmp.41 = load %Expr* (%Expr*) *, %Expr* (%Expr*) ** %tmp.40
+	%tmp.42 = call %Expr*(%Expr*) %tmp.41( %Expr* %tmp.36 )
+	%tmp.43 = load %Lambda*, %Lambda** %tmp.10
+	ret %Lambda* %tmp.43
+
+abort:
+	call void @abort(  )
+	unreachable
+}
+
+define %Expr* @Lambda_beta(%Lambda* %self) {
+
+entry:
+	%tmp.44 = alloca %Lambda*
+	store %Lambda* %self, %Lambda** %tmp.44
+	%tmp.45 = load %Lambda*, %Lambda** %tmp.44
+	%tmp.46 = bitcast %Lambda* %tmp.45 to %Expr*
+	ret %Expr* %tmp.46
+
+abort:
+	call void @abort(  )
+	unreachable
+}
+
+define %Expr* @Lambda_apply(%Lambda* %self, %Expr* %actual) {
+
+entry:
+	%tmp.47 = alloca %Lambda*
+	store %Lambda* %self, %Lambda** %tmp.47
+	%tmp.48 = alloca %Expr*
+	store %Expr* %actual, %Expr** %tmp.48
+	%tmp.49 = load %Lambda*, %Lambda** %tmp.47
+	%tmp.50 = getelementptr %Lambda, %Lambda* %tmp.49, i32 0, i32 1
+	%tmp.51 = load %Variable*, %Variable** %tmp.50
+	%tmp.52 = load %Expr*, %Expr** %tmp.48
+	%tmp.53 = load %Lambda*, %Lambda** %tmp.47
+	%tmp.54 = getelementptr %Lambda, %Lambda* %tmp.53, i32 0, i32 2
+	%tmp.55 = load %Expr*, %Expr** %tmp.54
+	%tmp.56 = icmp eq %Expr* %tmp.55, null
+	br i1 %tmp.56, label %abort, label %ok.4
+
+ok.4:
+	%tmp.57 = getelementptr %Expr, %Expr* %tmp.55, i32 0, i32 0
+	%tmp.58 = load %Expr_vtable*, %Expr_vtable** %tmp.57
+	%tmp.59 = getelementptr %Expr_vtable, %Expr_vtable* %tmp.58, i32 0, i32 13
+	%tmp.60 = load %Expr* (%Expr*,%Variable*,%Expr*) *, %Expr* (%Expr*,%Variable*,%Expr*) ** %tmp.59
+	%tmp.61 = call %Expr*(%Expr*, %Variable*, %Expr*) %tmp.60( %Expr* %tmp.55, %Variable* %tmp.51, %Expr* %tmp.52 )
+	ret %Expr* %tmp.61
+
+abort:
+	call void @abort(  )
+	unreachable
+}
+
+define %Expr* @Lambda_substitute(%Lambda* %self, %Variable* %x, %Expr* %e) {
+
+entry:
+	%tmp.62 = alloca %Lambda*
+	store %Lambda* %self, %Lambda** %tmp.62
+	%tmp.63 = alloca %Variable*
+	store %Variable* %x, %Variable** %tmp.63
+	%tmp.64 = alloca %Expr*
+	store %Expr* %e, %Expr** %tmp.64
+	%tmp.65 = alloca %Lambda*
+	%tmp.66 = load %Variable*, %Variable** %tmp.63
+	%tmp.67 = load %Lambda*, %Lambda** %tmp.62
+	%tmp.68 = getelementptr %Lambda, %Lambda* %tmp.67, i32 0, i32 1
+	%tmp.69 = load %Variable*, %Variable** %tmp.68
+	%tmp.70 = icmp eq %Variable* %tmp.66, %tmp.69
+	br i1 %tmp.70, label %true.0, label %false.0
+
+true.0:
+	%tmp.71 = load %Lambda*, %Lambda** %tmp.62
+	store %Lambda* %tmp.71, %Lambda** %tmp.65
+	br label %end.0
+
+false.0:
+	%tmp.72 = load %Variable*, %Variable** %tmp.63
+	%tmp.73 = load %Expr*, %Expr** %tmp.64
+	%tmp.74 = load %Lambda*, %Lambda** %tmp.62
+	%tmp.75 = getelementptr %Lambda, %Lambda* %tmp.74, i32 0, i32 2
+	%tmp.76 = load %Expr*, %Expr** %tmp.75
+	%tmp.77 = icmp eq %Expr* %tmp.76, null
+	br i1 %tmp.77, label %abort, label %ok.5
+
+ok.5:
+	%tmp.78 = getelementptr %Expr, %Expr* %tmp.76, i32 0, i32 0
+	%tmp.79 = load %Expr_vtable*, %Expr_vtable** %tmp.78
+	%tmp.80 = getelementptr %Expr_vtable, %Expr_vtable* %tmp.79, i32 0, i32 13
+	%tmp.81 = load %Expr* (%Expr*,%Variable*,%Expr*) *, %Expr* (%Expr*,%Variable*,%Expr*) ** %tmp.80
+	%tmp.82 = call %Expr*(%Expr*, %Variable*, %Expr*) %tmp.81( %Expr* %tmp.76, %Variable* %tmp.72, %Expr* %tmp.73 )
+	%tmp.83 = alloca %Expr*
+	store %Expr* %tmp.82, %Expr** %tmp.83
+	%tmp.84 = call %Lambda* @Lambda_new(  )
+	%tmp.85 = alloca %Lambda*
+	store %Lambda* %tmp.84, %Lambda** %tmp.85
+	%tmp.86 = load %Lambda*, %Lambda** %tmp.62
+	%tmp.87 = getelementptr %Lambda, %Lambda* %tmp.86, i32 0, i32 1
+	%tmp.88 = load %Variable*, %Variable** %tmp.87
+	%tmp.89 = load %Expr*, %Expr** %tmp.83
+	%tmp.90 = load %Lambda*, %Lambda** %tmp.85
+	%tmp.91 = icmp eq %Lambda* %tmp.90, null
+	br i1 %tmp.91, label %abort, label %ok.6
+
+ok.6:
+	%tmp.92 = getelementptr %Lambda, %Lambda* %tmp.90, i32 0, i32 0
+	%tmp.93 = load %Lambda_vtable*, %Lambda_vtable** %tmp.92
+	%tmp.94 = getelementptr %Lambda_vtable, %Lambda_vtable* %tmp.93, i32 0, i32 15
+	%tmp.95 = load %Lambda* (%Lambda*,%Variable*,%Expr*) *, %Lambda* (%Lambda*,%Variable*,%Expr*) ** %tmp.94
+	%tmp.96 = call %Lambda*(%Lambda*, %Variable*, %Expr*) %tmp.95( %Lambda* %tmp.90, %Variable* %tmp.88, %Expr* %tmp.89 )
+	store %Lambda* %tmp.96, %Lambda** %tmp.65
+	br label %end.0
+
+end.0:
+	%tmp.97 = load %Lambda*, %Lambda** %tmp.65
+	%tmp.98 = bitcast %Lambda* %tmp.97 to %Expr*
+	ret %Expr* %tmp.98
+
+abort:
+	call void @abort(  )
+	unreachable
+}
+
+define %Lambda* @Lambda_gen_code(%Lambda* %self, %VarList* %env, %LambdaListRef* %closures) {
+
+entry:
+	%tmp.99 = alloca %Lambda*
+	store %Lambda* %self, %Lambda** %tmp.99
+	%tmp.100 = alloca %VarList*
+	store %VarList* %env, %VarList** %tmp.100
+	%tmp.101 = alloca %LambdaListRef*
+	store %LambdaListRef* %closures, %LambdaListRef** %tmp.101
+	%tmp.102 = load %Lambda*, %Lambda** %tmp.99
+	%tmp.103 = icmp eq %Lambda* %tmp.102, null
+	br i1 %tmp.103, label %abort, label %ok.7
+
+ok.7:
+	%tmp.104 = getelementptr %Lambda, %Lambda* %tmp.102, i32 0, i32 0
+	%tmp.105 = load %Lambda_vtable*, %Lambda_vtable** %tmp.104
+	%tmp.106 = getelementptr %Lambda_vtable, %Lambda_vtable* %tmp.105, i32 0, i32 7
+	%tmp.107 = load %Lambda* (%Lambda*,%String*) *, %Lambda* (%Lambda*,%String*) ** %tmp.106
+	%tmp.108 = call %Lambda*(%Lambda*, %String*) %tmp.107( %Lambda* %tmp.102, %String* @String.12 )
+	%tmp.109 = load %VarList*, %VarList** %tmp.100
+	%tmp.110 = load %Lambda*, %Lambda** %tmp.99
+	%tmp.111 = load %LambdaListRef*, %LambdaListRef** %tmp.101
+	%tmp.112 = icmp eq %LambdaListRef* %tmp.111, null
+	br i1 %tmp.112, label %abort, label %ok.9
+
+ok.9:
+	%tmp.113 = getelementptr %LambdaListRef, %LambdaListRef* %tmp.111, i32 0, i32 0
+	%tmp.114 = load %LambdaListRef_vtable*, %LambdaListRef_vtable** %tmp.113
+	%tmp.115 = getelementptr %LambdaListRef_vtable, %LambdaListRef_vtable* %tmp.114, i32 0, i32 12
+	%tmp.116 = load i32 (%LambdaListRef*,%VarList*,%Lambda*) *, i32 (%LambdaListRef*,%VarList*,%Lambda*) ** %tmp.115
+	%tmp.117 = call i32(%LambdaListRef*, %VarList*, %Lambda*) %tmp.116( %LambdaListRef* %tmp.111, %VarList* %tmp.109, %Lambda* %tmp.110 )
+	%tmp.118 = load %Lambda*, %Lambda** %tmp.99
+	%tmp.119 = icmp eq %Lambda* %tmp.118, null
+	br i1 %tmp.119, label %abort, label %ok.8
+
+ok.8:
+	%tmp.120 = getelementptr %Lambda, %Lambda* %tmp.118, i32 0, i32 0
+	%tmp.121 = load %Lambda_vtable*, %Lambda_vtable** %tmp.120
+	%tmp.122 = getelementptr %Lambda_vtable, %Lambda_vtable* %tmp.121, i32 0, i32 8
+	%tmp.123 = load %Lambda* (%Lambda*,i32) *, %Lambda* (%Lambda*,i32) ** %tmp.122
+	%tmp.124 = call %Lambda*(%Lambda*, i32) %tmp.123( %Lambda* %tmp.118, i32 %tmp.117 )
+	%tmp.125 = load %Lambda*, %Lambda** %tmp.99
+	%tmp.126 = icmp eq %Lambda* %tmp.125, null
+	br i1 %tmp.126, label %abort, label %ok.10
+
+ok.10:
+	%tmp.127 = getelementptr %Lambda, %Lambda* %tmp.125, i32 0, i32 0
+	%tmp.128 = load %Lambda_vtable*, %Lambda_vtable** %tmp.127
+	%tmp.129 = getelementptr %Lambda_vtable, %Lambda_vtable* %tmp.128, i32 0, i32 7
+	%tmp.130 = load %Lambda* (%Lambda*,%String*) *, %Lambda* (%Lambda*,%String*) ** %tmp.129
+	%tmp.131 = call %Lambda*(%Lambda*, %String*) %tmp.130( %Lambda* %tmp.125, %String* @String.13 )
+	%tmp.132 = alloca %Lambda*
+	%tmp.133 = load %VarList*, %VarList** %tmp.100
+	%tmp.134 = icmp eq %VarList* %tmp.133, null
+	br i1 %tmp.134, label %abort, label %ok.11
+
+ok.11:
+	%tmp.135 = getelementptr %VarList, %VarList* %tmp.133, i32 0, i32 0
+	%tmp.136 = load %VarList_vtable*, %VarList_vtable** %tmp.135
+	%tmp.137 = getelementptr %VarList_vtable, %VarList_vtable* %tmp.136, i32 0, i32 11
+	%tmp.138 = load i1 (%VarList*) *, i1 (%VarList*) ** %tmp.137
+	%tmp.139 = call i1(%VarList*) %tmp.138( %VarList* %tmp.133 )
+	br i1 %tmp.139, label %true.1, label %false.1
+
+true.1:
+	%tmp.140 = load %Lambda*, %Lambda** %tmp.99
+	%tmp.141 = icmp eq %Lambda* %tmp.140, null
+	br i1 %tmp.141, label %abort, label %ok.12
+
+ok.12:
+	%tmp.142 = getelementptr %Lambda, %Lambda* %tmp.140, i32 0, i32 0
+	%tmp.143 = load %Lambda_vtable*, %Lambda_vtable** %tmp.142
+	%tmp.144 = getelementptr %Lambda_vtable, %Lambda_vtable* %tmp.143, i32 0, i32 7
+	%tmp.145 = load %Lambda* (%Lambda*,%String*) *, %Lambda* (%Lambda*,%String*) ** %tmp.144
+	%tmp.146 = call %Lambda*(%Lambda*, %String*) %tmp.145( %Lambda* %tmp.140, %String* @String.14 )
+	store %Lambda* %tmp.146, %Lambda** %tmp.132
+	br label %end.1
+
+false.1:
+	%tmp.147 = load %Lambda*, %Lambda** %tmp.99
+	%tmp.148 = icmp eq %Lambda* %tmp.147, null
+	br i1 %tmp.148, label %abort, label %ok.13
+
+ok.13:
+	%tmp.149 = getelementptr %Lambda, %Lambda* %tmp.147, i32 0, i32 0
+	%tmp.150 = load %Lambda_vtable*, %Lambda_vtable** %tmp.149
+	%tmp.151 = getelementptr %Lambda_vtable, %Lambda_vtable* %tmp.150, i32 0, i32 7
+	%tmp.152 = load %Lambda* (%Lambda*,%String*) *, %Lambda* (%Lambda*,%String*) ** %tmp.151
+	%tmp.153 = call %Lambda*(%Lambda*, %String*) %tmp.152( %Lambda* %tmp.147, %String* @String.15 )
+	store %Lambda* %tmp.153, %Lambda** %tmp.132
+	br label %end.1
+
+end.1:
+	%tmp.154 = load %Lambda*, %Lambda** %tmp.132
+	%tmp.155 = load %Lambda*, %Lambda** %tmp.99
+	ret %Lambda* %tmp.155
+
+abort:
+	call void @abort(  )
+	unreachable
+}
+
+define %Lambda* @Lambda_gen_closure_code(%Lambda* %self, i32 %n, %VarList* %env, %LambdaListRef* %closures) {
+
+entry:
+	%tmp.156 = alloca %Lambda*
+	store %Lambda* %self, %Lambda** %tmp.156
+	%tmp.157 = alloca i32
+	store i32 %n, i32* %tmp.157
+	%tmp.158 = alloca %VarList*
+	store %VarList* %env, %VarList** %tmp.158
+	%tmp.159 = alloca %LambdaListRef*
+	store %LambdaListRef* %closures, %LambdaListRef** %tmp.159
+	%tmp.160 = load %Lambda*, %Lambda** %tmp.156
+	%tmp.161 = icmp eq %Lambda* %tmp.160, null
+	br i1 %tmp.161, label %abort, label %ok.14
+
+ok.14:
+	%tmp.162 = getelementptr %Lambda, %Lambda* %tmp.160, i32 0, i32 0
+	%tmp.163 = load %Lambda_vtable*, %Lambda_vtable** %tmp.162
+	%tmp.164 = getelementptr %Lambda_vtable, %Lambda_vtable* %tmp.163, i32 0, i32 7
+	%tmp.165 = load %Lambda* (%Lambda*,%String*) *, %Lambda* (%Lambda*,%String*) ** %tmp.164
+	%tmp.166 = call %Lambda*(%Lambda*, %String*) %tmp.165( %Lambda* %tmp.160, %String* @String.16 )
+	%tmp.167 = load i32, i32* %tmp.157
+	%tmp.168 = load %Lambda*, %Lambda** %tmp.156
+	%tmp.169 = icmp eq %Lambda* %tmp.168, null
+	br i1 %tmp.169, label %abort, label %ok.15
+
+ok.15:
+	%tmp.170 = getelementptr %Lambda, %Lambda* %tmp.168, i32 0, i32 0
+	%tmp.171 = load %Lambda_vtable*, %Lambda_vtable** %tmp.170
+	%tmp.172 = getelementptr %Lambda_vtable, %Lambda_vtable* %tmp.171, i32 0, i32 8
+	%tmp.173 = load %Lambda* (%Lambda*,i32) *, %Lambda* (%Lambda*,i32) ** %tmp.172
+	%tmp.174 = call %Lambda*(%Lambda*, i32) %tmp.173( %Lambda* %tmp.168, i32 %tmp.167 )
+	%tmp.175 = load %Lambda*, %Lambda** %tmp.156
+	%tmp.176 = icmp eq %Lambda* %tmp.175, null
+	br i1 %tmp.176, label %abort, label %ok.16
+
+ok.16:
+	%tmp.177 = getelementptr %Lambda, %Lambda* %tmp.175, i32 0, i32 0
+	%tmp.178 = load %Lambda_vtable*, %Lambda_vtable** %tmp.177
+	%tmp.179 = getelementptr %Lambda_vtable, %Lambda_vtable* %tmp.178, i32 0, i32 7
+	%tmp.180 = load %Lambda* (%Lambda*,%String*) *, %Lambda* (%Lambda*,%String*) ** %tmp.179
+	%tmp.181 = call %Lambda*(%Lambda*, %String*) %tmp.180( %Lambda* %tmp.175, %String* @String.17 )
+	%tmp.182 = load %Lambda*, %Lambda** %tmp.156
+	%tmp.183 = icmp eq %Lambda* %tmp.182, null
+	br i1 %tmp.183, label %abort, label %ok.17
+
+ok.17:
+	%tmp.184 = getelementptr %Lambda, %Lambda* %tmp.182, i32 0, i32 0
+	%tmp.185 = load %Lambda_vtable*, %Lambda_vtable** %tmp.184
+	%tmp.186 = getelementptr %Lambda_vtable, %Lambda_vtable* %tmp.185, i32 0, i32 7
+	%tmp.187 = load %Lambda* (%Lambda*,%String*) *, %Lambda* (%Lambda*,%String*) ** %tmp.186
+	%tmp.188 = call %Lambda*(%Lambda*, %String*) %tmp.187( %Lambda* %tmp.182, %String* @String.18 )
+	%tmp.189 = load %Lambda*, %Lambda** %tmp.156
+	%tmp.190 = icmp eq %Lambda* %tmp.189, null
+	br i1 %tmp.190, label %abort, label %ok.18
+
+ok.18:
+	%tmp.191 = getelementptr %Lambda, %Lambda* %tmp.189, i32 0, i32 0
+	%tmp.192 = load %Lambda_vtable*, %Lambda_vtable** %tmp.191
+	%tmp.193 = getelementptr %Lambda_vtable, %Lambda_vtable* %tmp.192, i32 0, i32 7
+	%tmp.194 = load %Lambda* (%Lambda*,%String*) *, %Lambda* (%Lambda*,%String*) ** %tmp.193
+	%tmp.195 = call %Lambda*(%Lambda*, %String*) %tmp.194( %Lambda* %tmp.189, %String* @String.19 )
+	%tmp.196 = load i32, i32* %tmp.157
+	%tmp.197 = load %Lambda*, %Lambda** %tmp.156
+	%tmp.198 = icmp eq %Lambda* %tmp.197, null
+	br i1 %tmp.198, label %abort, label %ok.19
+
+ok.19:
+	%tmp.199 = getelementptr %Lambda, %Lambda* %tmp.197, i32 0, i32 0
+	%tmp.200 = load %Lambda_vtable*, %Lambda_vtable** %tmp.199
+	%tmp.201 = getelementptr %Lambda_vtable, %Lambda_vtable* %tmp.200, i32 0, i32 8
+	%tmp.202 = load %Lambda* (%Lambda*,i32) *, %Lambda* (%Lambda*,i32) ** %tmp.201
+	%tmp.203 = call %Lambda*(%Lambda*, i32) %tmp.202( %Lambda* %tmp.197, i32 %tmp.196 )
+	%tmp.204 = load %Lambda*, %Lambda** %tmp.156
+	%tmp.205 = icmp eq %Lambda* %tmp.204, null
+	br i1 %tmp.205, label %abort, label %ok.20
+
+ok.20:
+	%tmp.206 = getelementptr %Lambda, %Lambda* %tmp.204, i32 0, i32 0
+	%tmp.207 = load %Lambda_vtable*, %Lambda_vtable** %tmp.206
+	%tmp.208 = getelementptr %Lambda_vtable, %Lambda_vtable* %tmp.207, i32 0, i32 7
+	%tmp.209 = load %Lambda* (%Lambda*,%String*) *, %Lambda* (%Lambda*,%String*) ** %tmp.208
+	%tmp.210 = call %Lambda*(%Lambda*, %String*) %tmp.209( %Lambda* %tmp.204, %String* @String.20 )
+	%tmp.211 = load %Lambda*, %Lambda** %tmp.156
+	%tmp.212 = icmp eq %Lambda* %tmp.211, null
+	br i1 %tmp.212, label %abort, label %ok.21
+
+ok.21:
+	%tmp.213 = getelementptr %Lambda, %Lambda* %tmp.211, i32 0, i32 0
+	%tmp.214 = load %Lambda_vtable*, %Lambda_vtable** %tmp.213
+	%tmp.215 = getelementptr %Lambda_vtable, %Lambda_vtable* %tmp.214, i32 0, i32 7
+	%tmp.216 = load %Lambda* (%Lambda*,%String*) *, %Lambda* (%Lambda*,%String*) ** %tmp.215
+	%tmp.217 = call %Lambda*(%Lambda*, %String*) %tmp.216( %Lambda* %tmp.211, %String* @String.21 )
+	%tmp.218 = load %Lambda*, %Lambda** %tmp.156
+	%tmp.219 = getelementptr %Lambda, %Lambda* %tmp.218, i32 0, i32 1
+	%tmp.220 = load %Variable*, %Variable** %tmp.219
+	%tmp.221 = load %VarList*, %VarList** %tmp.158
+	%tmp.222 = icmp eq %VarList* %tmp.221, null
+	br i1 %tmp.222, label %abort, label %ok.23
+
+ok.23:
+	%tmp.223 = getelementptr %VarList, %VarList* %tmp.221, i32 0, i32 0
+	%tmp.224 = load %VarList_vtable*, %VarList_vtable** %tmp.223
+	%tmp.225 = getelementptr %VarList_vtable, %VarList_vtable* %tmp.224, i32 0, i32 14
+	%tmp.226 = load %VarList* (%VarList*,%Variable*) *, %VarList* (%VarList*,%Variable*) ** %tmp.225
+	%tmp.227 = call %VarList*(%VarList*, %Variable*) %tmp.226( %VarList* %tmp.221, %Variable* %tmp.220 )
+	%tmp.228 = load %LambdaListRef*, %LambdaListRef** %tmp.159
+	%tmp.229 = load %Lambda*, %Lambda** %tmp.156
+	%tmp.230 = getelementptr %Lambda, %Lambda* %tmp.229, i32 0, i32 2
+	%tmp.231 = load %Expr*, %Expr** %tmp.230
+	%tmp.232 = icmp eq %Expr* %tmp.231, null
+	br i1 %tmp.232, label %abort, label %ok.22
+
+ok.22:
+	%tmp.233 = getelementptr %Expr, %Expr* %tmp.231, i32 0, i32 0
+	%tmp.234 = load %Expr_vtable*, %Expr_vtable** %tmp.233
+	%tmp.235 = getelementptr %Expr_vtable, %Expr_vtable* %tmp.234, i32 0, i32 14
+	%tmp.236 = load %Expr* (%Expr*,%VarList*,%LambdaListRef*) *, %Expr* (%Expr*,%VarList*,%LambdaListRef*) ** %tmp.235
+	%tmp.237 = call %Expr*(%Expr*, %VarList*, %LambdaListRef*) %tmp.236( %Expr* %tmp.231, %VarList* %tmp.227, %LambdaListRef* %tmp.228 )
+	%tmp.238 = load %Lambda*, %Lambda** %tmp.156
+	%tmp.239 = icmp eq %Lambda* %tmp.238, null
+	br i1 %tmp.239, label %abort, label %ok.24
+
+ok.24:
+	%tmp.240 = getelementptr %Lambda, %Lambda* %tmp.238, i32 0, i32 0
+	%tmp.241 = load %Lambda_vtable*, %Lambda_vtable** %tmp.240
+	%tmp.242 = getelementptr %Lambda_vtable, %Lambda_vtable* %tmp.241, i32 0, i32 7
+	%tmp.243 = load %Lambda* (%Lambda*,%String*) *, %Lambda* (%Lambda*,%String*) ** %tmp.242
+	%tmp.244 = call %Lambda*(%Lambda*, %String*) %tmp.243( %Lambda* %tmp.238, %String* @String.22 )
+	%tmp.245 = load %Lambda*, %Lambda** %tmp.156
+	%tmp.246 = icmp eq %Lambda* %tmp.245, null
+	br i1 %tmp.246, label %abort, label %ok.25
+
+ok.25:
+	%tmp.247 = getelementptr %Lambda, %Lambda* %tmp.245, i32 0, i32 0
+	%tmp.248 = load %Lambda_vtable*, %Lambda_vtable** %tmp.247
+	%tmp.249 = getelementptr %Lambda_vtable, %Lambda_vtable* %tmp.248, i32 0, i32 7
+	%tmp.250 = load %Lambda* (%Lambda*,%String*) *, %Lambda* (%Lambda*,%String*) ** %tmp.249
+	%tmp.251 = call %Lambda*(%Lambda*, %String*) %tmp.250( %Lambda* %tmp.245, %String* @String.23 )
+	ret %Lambda* %tmp.251
+
+abort:
+	call void @abort(  )
+	unreachable
+}
+
+define %Lambda* @Lambda_new() {
+
+entry:
+	%tmp.252 = getelementptr %Lambda_vtable, %Lambda_vtable* @Lambda_vtable_prototype, i32 0, i32 1
+	%tmp.253 = load i32, i32* %tmp.252
+	%tmp.254 = call i8*(i32) @malloc( i32 %tmp.253 )
+	%tmp.255 = bitcast i8* %tmp.254 to %Lambda*
+	%tmp.256 = getelementptr %Lambda, %Lambda* %tmp.255, i32 0, i32 0
+	store %Lambda_vtable* @Lambda_vtable_prototype, %Lambda_vtable** %tmp.256
+	%tmp.257 = alloca %Lambda*
+	store %Lambda* %tmp.255, %Lambda** %tmp.257
+	%tmp.258 = getelementptr %Lambda, %Lambda* %tmp.255, i32 0, i32 1
+	store %Variable* null, %Variable** %tmp.258
+	%tmp.259 = getelementptr %Lambda, %Lambda* %tmp.255, i32 0, i32 2
+	store %Expr* null, %Expr** %tmp.259
+	ret %Lambda* %tmp.255
+
+abort:
+	call void @abort(  )
+	unreachable
+}
+
+define %App* @App_init(%App* %self, %Expr* %f, %Expr* %a) {
+
+entry:
+	%tmp.0 = alloca %App*
+	store %App* %self, %App** %tmp.0
+	%tmp.1 = alloca %Expr*
+	store %Expr* %f, %Expr** %tmp.1
+	%tmp.2 = alloca %Expr*
+	store %Expr* %a, %Expr** %tmp.2
+	%tmp.3 = load %Expr*, %Expr** %tmp.1
+	%tmp.4 = load %App*, %App** %tmp.0
+	%tmp.5 = getelementptr %App, %App* %tmp.4, i32 0, i32 1
+	store %Expr* %tmp.3, %Expr** %tmp.5
+	%tmp.6 = load %Expr*, %Expr** %tmp.2
+	%tmp.7 = load %App*, %App** %tmp.0
+	%tmp.8 = getelementptr %App, %App* %tmp.7, i32 0, i32 2
+	store %Expr* %tmp.6, %Expr** %tmp.8
+	%tmp.9 = load %App*, %App** %tmp.0
+	ret %App* %tmp.9
+
+abort:
+	call void @abort(  )
+	unreachable
+}
+
+define %App* @App_print_self(%App* %self) {
+
+entry:
+	%tmp.10 = alloca %App*
+	store %App* %self, %App** %tmp.10
+	%tmp.11 = load %App*, %App** %tmp.10
+	%tmp.12 = icmp eq %App* %tmp.11, null
+	br i1 %tmp.12, label %abort, label %ok.0
+
+ok.0:
+	%tmp.13 = getelementptr %App, %App* %tmp.11, i32 0, i32 0
+	%tmp.14 = load %App_vtable*, %App_vtable** %tmp.13
+	%tmp.15 = getelementptr %App_vtable, %App_vtable* %tmp.14, i32 0, i32 7
+	%tmp.16 = load %App* (%App*,%String*) *, %App* (%App*,%String*) ** %tmp.15
+	%tmp.17 = call %App*(%App*, %String*) %tmp.16( %App* %tmp.11, %String* @String.24 )
+	%tmp.18 = load %App*, %App** %tmp.10
+	%tmp.19 = getelementptr %App, %App* %tmp.18, i32 0, i32 1
+	%tmp.20 = load %Expr*, %Expr** %tmp.19
+	%tmp.21 = icmp eq %Expr* %tmp.20, null
+	br i1 %tmp.21, label %abort, label %ok.1
+
+ok.1:
+	%tmp.22 = getelementptr %Expr, %Expr* %tmp.20, i32 0, i32 0
+	%tmp.23 = load %Expr_vtable*, %Expr_vtable** %tmp.22
+	%tmp.24 = getelementptr %Expr_vtable, %Expr_vtable* %tmp.23, i32 0, i32 11
+	%tmp.25 = load %Expr* (%Expr*) *, %Expr* (%Expr*) ** %tmp.24
+	%tmp.26 = call %Expr*(%Expr*) %tmp.25( %Expr* %tmp.20 )
+	%tmp.27 = load %App*, %App** %tmp.10
+	%tmp.28 = icmp eq %App* %tmp.27, null
+	br i1 %tmp.28, label %abort, label %ok.2
+
+ok.2:
+	%tmp.29 = getelementptr %App, %App* %tmp.27, i32 0, i32 0
+	%tmp.30 = load %App_vtable*, %App_vtable** %tmp.29
+	%tmp.31 = getelementptr %App_vtable, %App_vtable* %tmp.30, i32 0, i32 7
+	%tmp.32 = load %App* (%App*,%String*) *, %App* (%App*,%String*) ** %tmp.31
+	%tmp.33 = call %App*(%App*, %String*) %tmp.32( %App* %tmp.27, %String* @String.25 )
+	%tmp.34 = load %App*, %App** %tmp.10
+	%tmp.35 = getelementptr %App, %App* %tmp.34, i32 0, i32 2
+	%tmp.36 = load %Expr*, %Expr** %tmp.35
+	%tmp.37 = icmp eq %Expr* %tmp.36, null
+	br i1 %tmp.37, label %abort, label %ok.3
+
+ok.3:
+	%tmp.38 = getelementptr %Expr, %Expr* %tmp.36, i32 0, i32 0
+	%tmp.39 = load %Expr_vtable*, %Expr_vtable** %tmp.38
+	%tmp.40 = getelementptr %Expr_vtable, %Expr_vtable* %tmp.39, i32 0, i32 11
+	%tmp.41 = load %Expr* (%Expr*) *, %Expr* (%Expr*) ** %tmp.40
+	%tmp.42 = call %Expr*(%Expr*) %tmp.41( %Expr* %tmp.36 )
+	%tmp.43 = load %App*, %App** %tmp.10
+	%tmp.44 = icmp eq %App* %tmp.43, null
+	br i1 %tmp.44, label %abort, label %ok.4
+
+ok.4:
+	%tmp.45 = getelementptr %App, %App* %tmp.43, i32 0, i32 0
+	%tmp.46 = load %App_vtable*, %App_vtable** %tmp.45
+	%tmp.47 = getelementptr %App_vtable, %App_vtable* %tmp.46, i32 0, i32 7
+	%tmp.48 = load %App* (%App*,%String*) *, %App* (%App*,%String*) ** %tmp.47
+	%tmp.49 = call %App*(%App*, %String*) %tmp.48( %App* %tmp.43, %String* @String.26 )
+	%tmp.50 = load %App*, %App** %tmp.10
+	ret %App* %tmp.50
+
+abort:
+	call void @abort(  )
+	unreachable
+}
+
+define %Expr* @App_beta(%App* %self) {
+
+entry:
+	%tmp.51 = alloca %App*
+	store %App* %self, %App** %tmp.51
+	%tmp.52 = load %App*, %App** %tmp.51
+	%tmp.53 = getelementptr %App, %App* %tmp.52, i32 0, i32 1
+	%tmp.54 = load %Expr*, %Expr** %tmp.53
+	%tmp.55 = icmp eq %Expr* %tmp.54, null
+	br i1 %tmp.55, label %abort, label %ok.5
+
+ok.5:
+	%tmp.56 = getelementptr %Expr, %Expr* %tmp.54, i32 0, i32 0
+	%tmp.57 = load %Expr_vtable*, %Expr_vtable** %tmp.56
+	%tmp.58 = getelementptr %Expr_vtable, %Expr_vtable* %tmp.57, i32 0, i32 0
+	%tmp.59 = load i32, i32* %tmp.58
+	br label %case.hdr.0
+
+case.hdr.0:
+	%tmp.60 = alloca %Expr*
+	br label %case.9.0
+
+case.9.0:
+	%vtpm.0 = icmp slt i32 %tmp.59, 9
+	br i1 %vtpm.0, label %br_exit.9.0, label %src_gte_br.9.0
+
+src_gte_br.9.0:
+	%vtpm.1 = icmp sgt i32 %tmp.59, 9
+	br i1 %vtpm.1, label %br_exit.9.0, label %src_lte_mc.9.0
+
+src_lte_mc.9.0:
+	%vtpm.2 = alloca %Lambda*
+	%tmp.61 = bitcast %Expr* %tmp.54 to %Lambda*
+	store %Lambda* %tmp.61, %Lambda** %vtpm.2
+	%tmp.62 = load %App*, %App** %tmp.51
+	%tmp.63 = getelementptr %App, %App* %tmp.62, i32 0, i32 2
+	%tmp.64 = load %Expr*, %Expr** %tmp.63
+	%tmp.65 = load %Lambda*, %Lambda** %vtpm.2
+	%tmp.66 = icmp eq %Lambda* %tmp.65, null
+	br i1 %tmp.66, label %abort, label %ok.6
+
+ok.6:
+	%tmp.67 = getelementptr %Lambda, %Lambda* %tmp.65, i32 0, i32 0
+	%tmp.68 = load %Lambda_vtable*, %Lambda_vtable** %tmp.67
+	%tmp.69 = getelementptr %Lambda_vtable, %Lambda_vtable* %tmp.68, i32 0, i32 16
+	%tmp.70 = load %Expr* (%Lambda*,%Expr*) *, %Expr* (%Lambda*,%Expr*) ** %tmp.69
+	%tmp.71 = call %Expr*(%Lambda*, %Expr*) %tmp.70( %Lambda* %tmp.65, %Expr* %tmp.64 )
+	store %Expr* %tmp.71, %Expr** %tmp.60
+	br label %case.exit.0
+
+br_exit.9.0:
+	br label %case.7.0
+
+case.7.0:
+	%vtpm.3 = icmp slt i32 %tmp.59, 7
+	br i1 %vtpm.3, label %br_exit.7.0, label %src_gte_br.7.0
+
+src_gte_br.7.0:
+	%vtpm.4 = icmp sgt i32 %tmp.59, 10
+	br i1 %vtpm.4, label %br_exit.7.0, label %src_lte_mc.7.0
+
+src_lte_mc.7.0:
+	%vtpm.5 = alloca %Expr*
+	store %Expr* %tmp.54, %Expr** %vtpm.5
+	%tmp.72 = load %App*, %App** %tmp.51
+	%tmp.73 = getelementptr %App, %App* %tmp.72, i32 0, i32 1
+	%tmp.74 = load %Expr*, %Expr** %tmp.73
+	%tmp.75 = icmp eq %Expr* %tmp.74, null
+	br i1 %tmp.75, label %abort, label %ok.7
+
+ok.7:
+	%tmp.76 = getelementptr %Expr, %Expr* %tmp.74, i32 0, i32 0
+	%tmp.77 = load %Expr_vtable*, %Expr_vtable** %tmp.76
+	%tmp.78 = getelementptr %Expr_vtable, %Expr_vtable* %tmp.77, i32 0, i32 12
+	%tmp.79 = load %Expr* (%Expr*) *, %Expr* (%Expr*) ** %tmp.78
+	%tmp.80 = call %Expr*(%Expr*) %tmp.79( %Expr* %tmp.74 )
+	%tmp.81 = alloca %Expr*
+	store %Expr* %tmp.80, %Expr** %tmp.81
+	%tmp.82 = call %App* @App_new(  )
+	%tmp.83 = alloca %App*
+	store %App* %tmp.82, %App** %tmp.83
+	%tmp.84 = load %Expr*, %Expr** %tmp.81
+	%tmp.85 = load %App*, %App** %tmp.51
+	%tmp.86 = getelementptr %App, %App* %tmp.85, i32 0, i32 2
+	%tmp.87 = load %Expr*, %Expr** %tmp.86
+	%tmp.88 = load %App*, %App** %tmp.83
+	%tmp.89 = icmp eq %App* %tmp.88, null
+	br i1 %tmp.89, label %abort, label %ok.8
+
+ok.8:
+	%tmp.90 = getelementptr %App, %App* %tmp.88, i32 0, i32 0
+	%tmp.91 = load %App_vtable*, %App_vtable** %tmp.90
+	%tmp.92 = getelementptr %App_vtable, %App_vtable* %tmp.91, i32 0, i32 15
+	%tmp.93 = load %App* (%App*,%Expr*,%Expr*) *, %App* (%App*,%Expr*,%Expr*) ** %tmp.92
+	%tmp.94 = call %App*(%App*, %Expr*, %Expr*) %tmp.93( %App* %tmp.88, %Expr* %tmp.84, %Expr* %tmp.87 )
+	%tmp.95 = bitcast %App* %tmp.94 to %Expr*
+	store %Expr* %tmp.95, %Expr** %tmp.60
+	br label %case.exit.0
+
+br_exit.7.0:
+	br label %abort
+
+case.exit.0:
+	%tmp.96 = load %Expr*, %Expr** %tmp.60
+	ret %Expr* %tmp.96
+
+abort:
+	call void @abort(  )
+	unreachable
+}
+
+define %Expr* @App_substitute(%App* %self, %Variable* %x, %Expr* %e) {
+
+entry:
+	%tmp.97 = alloca %App*
+	store %App* %self, %App** %tmp.97
+	%tmp.98 = alloca %Variable*
+	store %Variable* %x, %Variable** %tmp.98
+	%tmp.99 = alloca %Expr*
+	store %Expr* %e, %Expr** %tmp.99
+	%tmp.100 = load %Variable*, %Variable** %tmp.98
+	%tmp.101 = load %Expr*, %Expr** %tmp.99
+	%tmp.102 = load %App*, %App** %tmp.97
+	%tmp.103 = getelementptr %App, %App* %tmp.102, i32 0, i32 1
+	%tmp.104 = load %Expr*, %Expr** %tmp.103
+	%tmp.105 = icmp eq %Expr* %tmp.104, null
+	br i1 %tmp.105, label %abort, label %ok.9
+
+ok.9:
+	%tmp.106 = getelementptr %Expr, %Expr* %tmp.104, i32 0, i32 0
+	%tmp.107 = load %Expr_vtable*, %Expr_vtable** %tmp.106
+	%tmp.108 = getelementptr %Expr_vtable, %Expr_vtable* %tmp.107, i32 0, i32 13
+	%tmp.109 = load %Expr* (%Expr*,%Variable*,%Expr*) *, %Expr* (%Expr*,%Variable*,%Expr*) ** %tmp.108
+	%tmp.110 = call %Expr*(%Expr*, %Variable*, %Expr*) %tmp.109( %Expr* %tmp.104, %Variable* %tmp.100, %Expr* %tmp.101 )
+	%tmp.111 = alloca %Expr*
+	store %Expr* %tmp.110, %Expr** %tmp.111
+	%tmp.112 = load %Variable*, %Variable** %tmp.98
+	%tmp.113 = load %Expr*, %Expr** %tmp.99
+	%tmp.114 = load %App*, %App** %tmp.97
+	%tmp.115 = getelementptr %App, %App* %tmp.114, i32 0, i32 2
+	%tmp.116 = load %Expr*, %Expr** %tmp.115
+	%tmp.117 = icmp eq %Expr* %tmp.116, null
+	br i1 %tmp.117, label %abort, label %ok.10
+
+ok.10:
+	%tmp.118 = getelementptr %Expr, %Expr* %tmp.116, i32 0, i32 0
+	%tmp.119 = load %Expr_vtable*, %Expr_vtable** %tmp.118
+	%tmp.120 = getelementptr %Expr_vtable, %Expr_vtable* %tmp.119, i32 0, i32 13
+	%tmp.121 = load %Expr* (%Expr*,%Variable*,%Expr*) *, %Expr* (%Expr*,%Variable*,%Expr*) ** %tmp.120
+	%tmp.122 = call %Expr*(%Expr*, %Variable*, %Expr*) %tmp.121( %Expr* %tmp.116, %Variable* %tmp.112, %Expr* %tmp.113 )
+	%tmp.123 = alloca %Expr*
+	store %Expr* %tmp.122, %Expr** %tmp.123
+	%tmp.124 = call %App* @App_new(  )
+	%tmp.125 = alloca %App*
+	store %App* %tmp.124, %App** %tmp.125
+	%tmp.126 = load %Expr*, %Expr** %tmp.111
+	%tmp.127 = load %Expr*, %Expr** %tmp.123
+	%tmp.128 = load %App*, %App** %tmp.125
+	%tmp.129 = icmp eq %App* %tmp.128, null
+	br i1 %tmp.129, label %abort, label %ok.11
+
+ok.11:
+	%tmp.130 = getelementptr %App, %App* %tmp.128, i32 0, i32 0
+	%tmp.131 = load %App_vtable*, %App_vtable** %tmp.130
+	%tmp.132 = getelementptr %App_vtable, %App_vtable* %tmp.131, i32 0, i32 15
+	%tmp.133 = load %App* (%App*,%Expr*,%Expr*) *, %App* (%App*,%Expr*,%Expr*) ** %tmp.132
+	%tmp.134 = call %App*(%App*, %Expr*, %Expr*) %tmp.133( %App* %tmp.128, %Expr* %tmp.126, %Expr* %tmp.127 )
+	%tmp.135 = bitcast %App* %tmp.134 to %Expr*
+	ret %Expr* %tmp.135
+
+abort:
+	call void @abort(  )
+	unreachable
+}
+
+define %App* @App_gen_code(%App* %self, %VarList* %env, %LambdaListRef* %closures) {
+
+entry:
+	%tmp.136 = alloca %App*
+	store %App* %self, %App** %tmp.136
+	%tmp.137 = alloca %VarList*
+	store %VarList* %env, %VarList** %tmp.137
+	%tmp.138 = alloca %LambdaListRef*
+	store %LambdaListRef* %closures, %LambdaListRef** %tmp.138
+	%tmp.139 = load %App*, %App** %tmp.136
+	%tmp.140 = icmp eq %App* %tmp.139, null
+	br i1 %tmp.140, label %abort, label %ok.12
+
+ok.12:
+	%tmp.141 = getelementptr %App, %App* %tmp.139, i32 0, i32 0
+	%tmp.142 = load %App_vtable*, %App_vtable** %tmp.141
+	%tmp.143 = getelementptr %App_vtable, %App_vtable* %tmp.142, i32 0, i32 7
+	%tmp.144 = load %App* (%App*,%String*) *, %App* (%App*,%String*) ** %tmp.143
+	%tmp.145 = call %App*(%App*, %String*) %tmp.144( %App* %tmp.139, %String* @String.27 )
+	%tmp.146 = load %VarList*, %VarList** %tmp.137
+	%tmp.147 = load %LambdaListRef*, %LambdaListRef** %tmp.138
+	%tmp.148 = load %App*, %App** %tmp.136
+	%tmp.149 = getelementptr %App, %App* %tmp.148, i32 0, i32 1
+	%tmp.150 = load %Expr*, %Expr** %tmp.149
+	%tmp.151 = icmp eq %Expr* %tmp.150, null
+	br i1 %tmp.151, label %abort, label %ok.13
+
+ok.13:
+	%tmp.152 = getelementptr %Expr, %Expr* %tmp.150, i32 0, i32 0
+	%tmp.153 = load %Expr_vtable*, %Expr_vtable** %tmp.152
+	%tmp.154 = getelementptr %Expr_vtable, %Expr_vtable* %tmp.153, i32 0, i32 14
+	%tmp.155 = load %Expr* (%Expr*,%VarList*,%LambdaListRef*) *, %Expr* (%Expr*,%VarList*,%LambdaListRef*) ** %tmp.154
+	%tmp.156 = call %Expr*(%Expr*, %VarList*, %LambdaListRef*) %tmp.155( %Expr* %tmp.150, %VarList* %tmp.146, %LambdaListRef* %tmp.147 )
+	%tmp.157 = load %App*, %App** %tmp.136
+	%tmp.158 = icmp eq %App* %tmp.157, null
+	br i1 %tmp.158, label %abort, label %ok.14
+
+ok.14:
+	%tmp.159 = getelementptr %App, %App* %tmp.157, i32 0, i32 0
+	%tmp.160 = load %App_vtable*, %App_vtable** %tmp.159
+	%tmp.161 = getelementptr %App_vtable, %App_vtable* %tmp.160, i32 0, i32 7
+	%tmp.162 = load %App* (%App*,%String*) *, %App* (%App*,%String*) ** %tmp.161
+	%tmp.163 = call %App*(%App*, %String*) %tmp.162( %App* %tmp.157, %String* @String.28 )
+	%tmp.164 = load %App*, %App** %tmp.136
+	%tmp.165 = icmp eq %App* %tmp.164, null
+	br i1 %tmp.165, label %abort, label %ok.15
+
+ok.15:
+	%tmp.166 = getelementptr %App, %App* %tmp.164, i32 0, i32 0
+	%tmp.167 = load %App_vtable*, %App_vtable** %tmp.166
+	%tmp.168 = getelementptr %App_vtable, %App_vtable* %tmp.167, i32 0, i32 7
+	%tmp.169 = load %App* (%App*,%String*) *, %App* (%App*,%String*) ** %tmp.168
+	%tmp.170 = call %App*(%App*, %String*) %tmp.169( %App* %tmp.164, %String* @String.29 )
+	%tmp.171 = load %VarList*, %VarList** %tmp.137
+	%tmp.172 = load %LambdaListRef*, %LambdaListRef** %tmp.138
+	%tmp.173 = load %App*, %App** %tmp.136
+	%tmp.174 = getelementptr %App, %App* %tmp.173, i32 0, i32 2
+	%tmp.175 = load %Expr*, %Expr** %tmp.174
+	%tmp.176 = icmp eq %Expr* %tmp.175, null
+	br i1 %tmp.176, label %abort, label %ok.16
+
+ok.16:
+	%tmp.177 = getelementptr %Expr, %Expr* %tmp.175, i32 0, i32 0
+	%tmp.178 = load %Expr_vtable*, %Expr_vtable** %tmp.177
+	%tmp.179 = getelementptr %Expr_vtable, %Expr_vtable* %tmp.178, i32 0, i32 14
+	%tmp.180 = load %Expr* (%Expr*,%VarList*,%LambdaListRef*) *, %Expr* (%Expr*,%VarList*,%LambdaListRef*) ** %tmp.179
+	%tmp.181 = call %Expr*(%Expr*, %VarList*, %LambdaListRef*) %tmp.180( %Expr* %tmp.175, %VarList* %tmp.171, %LambdaListRef* %tmp.172 )
+	%tmp.182 = load %App*, %App** %tmp.136
+	%tmp.183 = icmp eq %App* %tmp.182, null
+	br i1 %tmp.183, label %abort, label %ok.17
+
+ok.17:
+	%tmp.184 = getelementptr %App, %App* %tmp.182, i32 0, i32 0
+	%tmp.185 = load %App_vtable*, %App_vtable** %tmp.184
+	%tmp.186 = getelementptr %App_vtable, %App_vtable* %tmp.185, i32 0, i32 7
+	%tmp.187 = load %App* (%App*,%String*) *, %App* (%App*,%String*) ** %tmp.186
+	%tmp.188 = call %App*(%App*, %String*) %tmp.187( %App* %tmp.182, %String* @String.30 )
+	%tmp.189 = load %App*, %App** %tmp.136
+	%tmp.190 = icmp eq %App* %tmp.189, null
+	br i1 %tmp.190, label %abort, label %ok.18
+
+ok.18:
+	%tmp.191 = getelementptr %App, %App* %tmp.189, i32 0, i32 0
+	%tmp.192 = load %App_vtable*, %App_vtable** %tmp.191
+	%tmp.193 = getelementptr %App_vtable, %App_vtable* %tmp.192, i32 0, i32 7
+	%tmp.194 = load %App* (%App*,%String*) *, %App* (%App*,%String*) ** %tmp.193
+	%tmp.195 = call %App*(%App*, %String*) %tmp.194( %App* %tmp.189, %String* @String.31 )
+	%tmp.196 = load %App*, %App** %tmp.136
+	%tmp.197 = icmp eq %App* %tmp.196, null
+	br i1 %tmp.197, label %abort, label %ok.19
+
+ok.19:
+	%tmp.198 = getelementptr %App, %App* %tmp.196, i32 0, i32 0
+	%tmp.199 = load %App_vtable*, %App_vtable** %tmp.198
+	%tmp.200 = getelementptr %App_vtable, %App_vtable* %tmp.199, i32 0, i32 7
+	%tmp.201 = load %App* (%App*,%String*) *, %App* (%App*,%String*) ** %tmp.200
+	%tmp.202 = call %App*(%App*, %String*) %tmp.201( %App* %tmp.196, %String* @String.32 )
+	%tmp.203 = load %App*, %App** %tmp.136
+	%tmp.204 = icmp eq %App* %tmp.203, null
+	br i1 %tmp.204, label %abort, label %ok.20
+
+ok.20:
+	%tmp.205 = getelementptr %App, %App* %tmp.203, i32 0, i32 0
+	%tmp.206 = load %App_vtable*, %App_vtable** %tmp.205
+	%tmp.207 = getelementptr %App_vtable, %App_vtable* %tmp.206, i32 0, i32 7
+	%tmp.208 = load %App* (%App*,%String*) *, %App* (%App*,%String*) ** %tmp.207
+	%tmp.209 = call %App*(%App*, %String*) %tmp.208( %App* %tmp.203, %String* @String.33 )
+	%tmp.210 = load %App*, %App** %tmp.136
+	%tmp.211 = icmp eq %App* %tmp.210, null
+	br i1 %tmp.211, label %abort, label %ok.21
+
+ok.21:
+	%tmp.212 = getelementptr %App, %App* %tmp.210, i32 0, i32 0
+	%tmp.213 = load %App_vtable*, %App_vtable** %tmp.212
+	%tmp.214 = getelementptr %App_vtable, %App_vtable* %tmp.213, i32 0, i32 7
+	%tmp.215 = load %App* (%App*,%String*) *, %App* (%App*,%String*) ** %tmp.214
+	%tmp.216 = call %App*(%App*, %String*) %tmp.215( %App* %tmp.210, %String* @String.34 )
+	ret %App* %tmp.216
+
+abort:
+	call void @abort(  )
+	unreachable
+}
+
+define %App* @App_new() {
+
+entry:
+	%tmp.217 = getelementptr %App_vtable, %App_vtable* @App_vtable_prototype, i32 0, i32 1
+	%tmp.218 = load i32, i32* %tmp.217
+	%tmp.219 = call i8*(i32) @malloc( i32 %tmp.218 )
+	%tmp.220 = bitcast i8* %tmp.219 to %App*
+	%tmp.221 = getelementptr %App, %App* %tmp.220, i32 0, i32 0
+	store %App_vtable* @App_vtable_prototype, %App_vtable** %tmp.221
+	%tmp.222 = alloca %App*
+	store %App* %tmp.220, %App** %tmp.222
+	%tmp.223 = getelementptr %App, %App* %tmp.220, i32 0, i32 1
+	store %Expr* null, %Expr** %tmp.223
+	%tmp.224 = getelementptr %App, %App* %tmp.220, i32 0, i32 2
+	store %Expr* null, %Expr** %tmp.224
+	ret %App* %tmp.220
+
+abort:
+	call void @abort(  )
+	unreachable
+}
+
+define %Variable* @Term_var(%Term* %self, %String* %x) {
+
+entry:
+	%tmp.0 = alloca %Term*
+	store %Term* %self, %Term** %tmp.0
+	%tmp.1 = alloca %String*
+	store %String* %x, %String** %tmp.1
+	%tmp.2 = call %Variable* @Variable_new(  )
+	%tmp.3 = alloca %Variable*
+	store %Variable* %tmp.2, %Variable** %tmp.3
+	%tmp.4 = load %String*, %String** %tmp.1
+	%tmp.5 = load %Variable*, %Variable** %tmp.3
+	%tmp.6 = icmp eq %Variable* %tmp.5, null
+	br i1 %tmp.6, label %abort, label %ok.0
+
+ok.0:
+	%tmp.7 = getelementptr %Variable, %Variable* %tmp.5, i32 0, i32 0
+	%tmp.8 = load %Variable_vtable*, %Variable_vtable** %tmp.7
+	%tmp.9 = getelementptr %Variable_vtable, %Variable_vtable* %tmp.8, i32 0, i32 15
+	%tmp.10 = load %Variable* (%Variable*,%String*) *, %Variable* (%Variable*,%String*) ** %tmp.9
+	%tmp.11 = call %Variable*(%Variable*, %String*) %tmp.10( %Variable* %tmp.5, %String* %tmp.4 )
+	ret %Variable* %tmp.11
+
+abort:
+	call void @abort(  )
+	unreachable
+}
+
+define %Lambda* @Term_lam(%Term* %self, %Variable* %x, %Expr* %e) {
+
+entry:
+	%tmp.12 = alloca %Term*
+	store %Term* %self, %Term** %tmp.12
+	%tmp.13 = alloca %Variable*
+	store %Variable* %x, %Variable** %tmp.13
+	%tmp.14 = alloca %Expr*
+	store %Expr* %e, %Expr** %tmp.14
+	%tmp.15 = call %Lambda* @Lambda_new(  )
+	%tmp.16 = alloca %Lambda*
+	store %Lambda* %tmp.15, %Lambda** %tmp.16
+	%tmp.17 = load %Variable*, %Variable** %tmp.13
+	%tmp.18 = load %Expr*, %Expr** %tmp.14
+	%tmp.19 = load %Lambda*, %Lambda** %tmp.16
+	%tmp.20 = icmp eq %Lambda* %tmp.19, null
+	br i1 %tmp.20, label %abort, label %ok.1
+
+ok.1:
+	%tmp.21 = getelementptr %Lambda, %Lambda* %tmp.19, i32 0, i32 0
+	%tmp.22 = load %Lambda_vtable*, %Lambda_vtable** %tmp.21
+	%tmp.23 = getelementptr %Lambda_vtable, %Lambda_vtable* %tmp.22, i32 0, i32 15
+	%tmp.24 = load %Lambda* (%Lambda*,%Variable*,%Expr*) *, %Lambda* (%Lambda*,%Variable*,%Expr*) ** %tmp.23
+	%tmp.25 = call %Lambda*(%Lambda*, %Variable*, %Expr*) %tmp.24( %Lambda* %tmp.19, %Variable* %tmp.17, %Expr* %tmp.18 )
+	ret %Lambda* %tmp.25
+
+abort:
+	call void @abort(  )
+	unreachable
+}
+
+define %App* @Term_app(%Term* %self, %Expr* %e1, %Expr* %e2) {
+
+entry:
+	%tmp.26 = alloca %Term*
+	store %Term* %self, %Term** %tmp.26
+	%tmp.27 = alloca %Expr*
+	store %Expr* %e1, %Expr** %tmp.27
+	%tmp.28 = alloca %Expr*
+	store %Expr* %e2, %Expr** %tmp.28
+	%tmp.29 = call %App* @App_new(  )
+	%tmp.30 = alloca %App*
+	store %App* %tmp.29, %App** %tmp.30
+	%tmp.31 = load %Expr*, %Expr** %tmp.27
+	%tmp.32 = load %Expr*, %Expr** %tmp.28
+	%tmp.33 = load %App*, %App** %tmp.30
+	%tmp.34 = icmp eq %App* %tmp.33, null
+	br i1 %tmp.34, label %abort, label %ok.2
+
+ok.2:
+	%tmp.35 = getelementptr %App, %App* %tmp.33, i32 0, i32 0
+	%tmp.36 = load %App_vtable*, %App_vtable** %tmp.35
+	%tmp.37 = getelementptr %App_vtable, %App_vtable* %tmp.36, i32 0, i32 15
+	%tmp.38 = load %App* (%App*,%Expr*,%Expr*) *, %App* (%App*,%Expr*,%Expr*) ** %tmp.37
+	%tmp.39 = call %App*(%App*, %Expr*, %Expr*) %tmp.38( %App* %tmp.33, %Expr* %tmp.31, %Expr* %tmp.32 )
+	ret %App* %tmp.39
+
+abort:
+	call void @abort(  )
+	unreachable
+}
+
+define %Expr* @Term_i(%Term* %self) {
+
+entry:
+	%tmp.40 = alloca %Term*
+	store %Term* %self, %Term** %tmp.40
+	%tmp.41 = load %Term*, %Term** %tmp.40
+	%tmp.42 = icmp eq %Term* %tmp.41, null
+	br i1 %tmp.42, label %abort, label %ok.3
+
+ok.3:
+	%tmp.43 = getelementptr %Term, %Term* %tmp.41, i32 0, i32 0
+	%tmp.44 = load %Term_vtable*, %Term_vtable** %tmp.43
+	%tmp.45 = getelementptr %Term_vtable, %Term_vtable* %tmp.44, i32 0, i32 11
+	%tmp.46 = load %Variable* (%Term*,%String*) *, %Variable* (%Term*,%String*) ** %tmp.45
+	%tmp.47 = call %Variable*(%Term*, %String*) %tmp.46( %Term* %tmp.41, %String* @String.35 )
+	%tmp.48 = alloca %Variable*
+	store %Variable* %tmp.47, %Variable** %tmp.48
+	%tmp.49 = load %Variable*, %Variable** %tmp.48
+	%tmp.50 = load %Variable*, %Variable** %tmp.48
+	%tmp.51 = load %Term*, %Term** %tmp.40
+	%tmp.52 = icmp eq %Term* %tmp.51, null
+	br i1 %tmp.52, label %abort, label %ok.4
+
+ok.4:
+	%tmp.53 = getelementptr %Term, %Term* %tmp.51, i32 0, i32 0
+	%tmp.54 = load %Term_vtable*, %Term_vtable** %tmp.53
+	%tmp.55 = getelementptr %Term_vtable, %Term_vtable* %tmp.54, i32 0, i32 12
+	%tmp.56 = load %Lambda* (%Term*,%Variable*,%Expr*) *, %Lambda* (%Term*,%Variable*,%Expr*) ** %tmp.55
+	%tmp.57 = bitcast %Variable* %tmp.50 to %Expr*
+	%tmp.58 = call %Lambda*(%Term*, %Variable*, %Expr*) %tmp.56( %Term* %tmp.51, %Variable* %tmp.49, %Expr* %tmp.57 )
+	%tmp.59 = bitcast %Lambda* %tmp.58 to %Expr*
+	ret %Expr* %tmp.59
+
+abort:
+	call void @abort(  )
+	unreachable
+}
+
+define %Expr* @Term_k(%Term* %self) {
+
+entry:
+	%tmp.60 = alloca %Term*
+	store %Term* %self, %Term** %tmp.60
+	%tmp.61 = load %Term*, %Term** %tmp.60
+	%tmp.62 = icmp eq %Term* %tmp.61, null
+	br i1 %tmp.62, label %abort, label %ok.5
+
+ok.5:
+	%tmp.63 = getelementptr %Term, %Term* %tmp.61, i32 0, i32 0
+	%tmp.64 = load %Term_vtable*, %Term_vtable** %tmp.63
+	%tmp.65 = getelementptr %Term_vtable, %Term_vtable* %tmp.64, i32 0, i32 11
+	%tmp.66 = load %Variable* (%Term*,%String*) *, %Variable* (%Term*,%String*) ** %tmp.65
+	%tmp.67 = call %Variable*(%Term*, %String*) %tmp.66( %Term* %tmp.61, %String* @String.35 )
+	%tmp.68 = alloca %Variable*
+	store %Variable* %tmp.67, %Variable** %tmp.68
+	%tmp.69 = load %Term*, %Term** %tmp.60
+	%tmp.70 = icmp eq %Term* %tmp.69, null
+	br i1 %tmp.70, label %abort, label %ok.6
+
+ok.6:
+	%tmp.71 = getelementptr %Term, %Term* %tmp.69, i32 0, i32 0
+	%tmp.72 = load %Term_vtable*, %Term_vtable** %tmp.71
+	%tmp.73 = getelementptr %Term_vtable, %Term_vtable* %tmp.72, i32 0, i32 11
+	%tmp.74 = load %Variable* (%Term*,%String*) *, %Variable* (%Term*,%String*) ** %tmp.73
+	%tmp.75 = call %Variable*(%Term*, %String*) %tmp.74( %Term* %tmp.69, %String* @String.36 )
+	%tmp.76 = alloca %Variable*
+	store %Variable* %tmp.75, %Variable** %tmp.76
+	%tmp.77 = load %Variable*, %Variable** %tmp.68
+	%tmp.78 = load %Variable*, %Variable** %tmp.76
+	%tmp.79 = load %Variable*, %Variable** %tmp.68
+	%tmp.80 = load %Term*, %Term** %tmp.60
+	%tmp.81 = icmp eq %Term* %tmp.80, null
+	br i1 %tmp.81, label %abort, label %ok.8
+
+ok.8:
+	%tmp.82 = getelementptr %Term, %Term* %tmp.80, i32 0, i32 0
+	%tmp.83 = load %Term_vtable*, %Term_vtable** %tmp.82
+	%tmp.84 = getelementptr %Term_vtable, %Term_vtable* %tmp.83, i32 0, i32 12
+	%tmp.85 = load %Lambda* (%Term*,%Variable*,%Expr*) *, %Lambda* (%Term*,%Variable*,%Expr*) ** %tmp.84
+	%tmp.86 = bitcast %Variable* %tmp.79 to %Expr*
+	%tmp.87 = call %Lambda*(%Term*, %Variable*, %Expr*) %tmp.85( %Term* %tmp.80, %Variable* %tmp.78, %Expr* %tmp.86 )
+	%tmp.88 = load %Term*, %Term** %tmp.60
+	%tmp.89 = icmp eq %Term* %tmp.88, null
+	br i1 %tmp.89, label %abort, label %ok.7
+
+ok.7:
+	%tmp.90 = getelementptr %Term, %Term* %tmp.88, i32 0, i32 0
+	%tmp.91 = load %Term_vtable*, %Term_vtable** %tmp.90
+	%tmp.92 = getelementptr %Term_vtable, %Term_vtable* %tmp.91, i32 0, i32 12
+	%tmp.93 = load %Lambda* (%Term*,%Variable*,%Expr*) *, %Lambda* (%Term*,%Variable*,%Expr*) ** %tmp.92
+	%tmp.94 = bitcast %Lambda* %tmp.87 to %Expr*
+	%tmp.95 = call %Lambda*(%Term*, %Variable*, %Expr*) %tmp.93( %Term* %tmp.88, %Variable* %tmp.77, %Expr* %tmp.94 )
+	%tmp.96 = bitcast %Lambda* %tmp.95 to %Expr*
+	ret %Expr* %tmp.96
+
+abort:
+	call void @abort(  )
+	unreachable
+}
+
+define %Expr* @Term_s(%Term* %self) {
+
+entry:
+	%tmp.97 = alloca %Term*
+	store %Term* %self, %Term** %tmp.97
+	%tmp.98 = load %Term*, %Term** %tmp.97
+	%tmp.99 = icmp eq %Term* %tmp.98, null
+	br i1 %tmp.99, label %abort, label %ok.9
+
+ok.9:
+	%tmp.100 = getelementptr %Term, %Term* %tmp.98, i32 0, i32 0
+	%tmp.101 = load %Term_vtable*, %Term_vtable** %tmp.100
+	%tmp.102 = getelementptr %Term_vtable, %Term_vtable* %tmp.101, i32 0, i32 11
+	%tmp.103 = load %Variable* (%Term*,%String*) *, %Variable* (%Term*,%String*) ** %tmp.102
+	%tmp.104 = call %Variable*(%Term*, %String*) %tmp.103( %Term* %tmp.98, %String* @String.35 )
+	%tmp.105 = alloca %Variable*
+	store %Variable* %tmp.104, %Variable** %tmp.105
+	%tmp.106 = load %Term*, %Term** %tmp.97
+	%tmp.107 = icmp eq %Term* %tmp.106, null
+	br i1 %tmp.107, label %abort, label %ok.10
+
+ok.10:
+	%tmp.108 = getelementptr %Term, %Term* %tmp.106, i32 0, i32 0
+	%tmp.109 = load %Term_vtable*, %Term_vtable** %tmp.108
+	%tmp.110 = getelementptr %Term_vtable, %Term_vtable* %tmp.109, i32 0, i32 11
+	%tmp.111 = load %Variable* (%Term*,%String*) *, %Variable* (%Term*,%String*) ** %tmp.110
+	%tmp.112 = call %Variable*(%Term*, %String*) %tmp.111( %Term* %tmp.106, %String* @String.36 )
+	%tmp.113 = alloca %Variable*
+	store %Variable* %tmp.112, %Variable** %tmp.113
+	%tmp.114 = load %Term*, %Term** %tmp.97
+	%tmp.115 = icmp eq %Term* %tmp.114, null
+	br i1 %tmp.115, label %abort, label %ok.11
+
+ok.11:
+	%tmp.116 = getelementptr %Term, %Term* %tmp.114, i32 0, i32 0
+	%tmp.117 = load %Term_vtable*, %Term_vtable** %tmp.116
+	%tmp.118 = getelementptr %Term_vtable, %Term_vtable* %tmp.117, i32 0, i32 11
+	%tmp.119 = load %Variable* (%Term*,%String*) *, %Variable* (%Term*,%String*) ** %tmp.118
+	%tmp.120 = call %Variable*(%Term*, %String*) %tmp.119( %Term* %tmp.114, %String* @String.37 )
+	%tmp.121 = alloca %Variable*
+	store %Variable* %tmp.120, %Variable** %tmp.121
+	%tmp.122 = load %Variable*, %Variable** %tmp.105
+	%tmp.123 = load %Variable*, %Variable** %tmp.113
+	%tmp.124 = load %Variable*, %Variable** %tmp.121
+	%tmp.125 = load %Variable*, %Variable** %tmp.105
+	%tmp.126 = load %Variable*, %Variable** %tmp.121
+	%tmp.127 = load %Term*, %Term** %tmp.97
+	%tmp.128 = icmp eq %Term* %tmp.127, null
+	br i1 %tmp.128, label %abort, label %ok.16
+
+ok.16:
+	%tmp.129 = getelementptr %Term, %Term* %tmp.127, i32 0, i32 0
+	%tmp.130 = load %Term_vtable*, %Term_vtable** %tmp.129
+	%tmp.131 = getelementptr %Term_vtable, %Term_vtable* %tmp.130, i32 0, i32 13
+	%tmp.132 = load %App* (%Term*,%Expr*,%Expr*) *, %App* (%Term*,%Expr*,%Expr*) ** %tmp.131
+	%tmp.133 = bitcast %Variable* %tmp.125 to %Expr*
+	%tmp.134 = bitcast %Variable* %tmp.126 to %Expr*
+	%tmp.135 = call %App*(%Term*, %Expr*, %Expr*) %tmp.132( %Term* %tmp.127, %Expr* %tmp.133, %Expr* %tmp.134 )
+	%tmp.136 = load %Variable*, %Variable** %tmp.113
+	%tmp.137 = load %Variable*, %Variable** %tmp.121
+	%tmp.138 = load %Term*, %Term** %tmp.97
+	%tmp.139 = icmp eq %Term* %tmp.138, null
+	br i1 %tmp.139, label %abort, label %ok.17
+
+ok.17:
+	%tmp.140 = getelementptr %Term, %Term* %tmp.138, i32 0, i32 0
+	%tmp.141 = load %Term_vtable*, %Term_vtable** %tmp.140
+	%tmp.142 = getelementptr %Term_vtable, %Term_vtable* %tmp.141, i32 0, i32 13
+	%tmp.143 = load %App* (%Term*,%Expr*,%Expr*) *, %App* (%Term*,%Expr*,%Expr*) ** %tmp.142
+	%tmp.144 = bitcast %Variable* %tmp.136 to %Expr*
+	%tmp.145 = bitcast %Variable* %tmp.137 to %Expr*
+	%tmp.146 = call %App*(%Term*, %Expr*, %Expr*) %tmp.143( %Term* %tmp.138, %Expr* %tmp.144, %Expr* %tmp.145 )
+	%tmp.147 = load %Term*, %Term** %tmp.97
+	%tmp.148 = icmp eq %Term* %tmp.147, null
+	br i1 %tmp.148, label %abort, label %ok.15
+
+ok.15:
+	%tmp.149 = getelementptr %Term, %Term* %tmp.147, i32 0, i32 0
+	%tmp.150 = load %Term_vtable*, %Term_vtable** %tmp.149
+	%tmp.151 = getelementptr %Term_vtable, %Term_vtable* %tmp.150, i32 0, i32 13
+	%tmp.152 = load %App* (%Term*,%Expr*,%Expr*) *, %App* (%Term*,%Expr*,%Expr*) ** %tmp.151
+	%tmp.153 = bitcast %App* %tmp.135 to %Expr*
+	%tmp.154 = bitcast %App* %tmp.146 to %Expr*
+	%tmp.155 = call %App*(%Term*, %Expr*, %Expr*) %tmp.152( %Term* %tmp.147, %Expr* %tmp.153, %Expr* %tmp.154 )
+	%tmp.156 = load %Term*, %Term** %tmp.97
+	%tmp.157 = icmp eq %Term* %tmp.156, null
+	br i1 %tmp.157, label %abort, label %ok.14
+
+ok.14:
+	%tmp.158 = getelementptr %Term, %Term* %tmp.156, i32 0, i32 0
+	%tmp.159 = load %Term_vtable*, %Term_vtable** %tmp.158
+	%tmp.160 = getelementptr %Term_vtable, %Term_vtable* %tmp.159, i32 0, i32 12
+	%tmp.161 = load %Lambda* (%Term*,%Variable*,%Expr*) *, %Lambda* (%Term*,%Variable*,%Expr*) ** %tmp.160
+	%tmp.162 = bitcast %App* %tmp.155 to %Expr*
+	%tmp.163 = call %Lambda*(%Term*, %Variable*, %Expr*) %tmp.161( %Term* %tmp.156, %Variable* %tmp.124, %Expr* %tmp.162 )
+	%tmp.164 = load %Term*, %Term** %tmp.97
+	%tmp.165 = icmp eq %Term* %tmp.164, null
+	br i1 %tmp.165, label %abort, label %ok.13
+
+ok.13:
+	%tmp.166 = getelementptr %Term, %Term* %tmp.164, i32 0, i32 0
+	%tmp.167 = load %Term_vtable*, %Term_vtable** %tmp.166
+	%tmp.168 = getelementptr %Term_vtable, %Term_vtable* %tmp.167, i32 0, i32 12
+	%tmp.169 = load %Lambda* (%Term*,%Variable*,%Expr*) *, %Lambda* (%Term*,%Variable*,%Expr*) ** %tmp.168
+	%tmp.170 = bitcast %Lambda* %tmp.163 to %Expr*
+	%tmp.171 = call %Lambda*(%Term*, %Variable*, %Expr*) %tmp.169( %Term* %tmp.164, %Variable* %tmp.123, %Expr* %tmp.170 )
+	%tmp.172 = load %Term*, %Term** %tmp.97
+	%tmp.173 = icmp eq %Term* %tmp.172, null
+	br i1 %tmp.173, label %abort, label %ok.12
+
+ok.12:
+	%tmp.174 = getelementptr %Term, %Term* %tmp.172, i32 0, i32 0
+	%tmp.175 = load %Term_vtable*, %Term_vtable** %tmp.174
+	%tmp.176 = getelementptr %Term_vtable, %Term_vtable* %tmp.175, i32 0, i32 12
+	%tmp.177 = load %Lambda* (%Term*,%Variable*,%Expr*) *, %Lambda* (%Term*,%Variable*,%Expr*) ** %tmp.176
+	%tmp.178 = bitcast %Lambda* %tmp.171 to %Expr*
+	%tmp.179 = call %Lambda*(%Term*, %Variable*, %Expr*) %tmp.177( %Term* %tmp.172, %Variable* %tmp.122, %Expr* %tmp.178 )
+	%tmp.180 = bitcast %Lambda* %tmp.179 to %Expr*
+	ret %Expr* %tmp.180
+
+abort:
+	call void @abort(  )
+	unreachable
+}
+
+define %Term* @Term_new() {
+
+entry:
+	%tmp.181 = getelementptr %Term_vtable, %Term_vtable* @Term_vtable_prototype, i32 0, i32 1
+	%tmp.182 = load i32, i32* %tmp.181
+	%tmp.183 = call i8*(i32) @malloc( i32 %tmp.182 )
+	%tmp.184 = bitcast i8* %tmp.183 to %Term*
+	%tmp.185 = getelementptr %Term, %Term* %tmp.184, i32 0, i32 0
+	store %Term_vtable* @Term_vtable_prototype, %Term_vtable** %tmp.185
+	%tmp.186 = alloca %Term*
+	store %Term* %tmp.184, %Term** %tmp.186
+	ret %Term* %tmp.184
+
+abort:
+	call void @abort(  )
+	unreachable
+}
+
+define %Expr* @Main_beta_reduce(%Main* %self, %Expr* %e) {
+
+entry:
+	%tmp.0 = alloca %Main*
+	store %Main* %self, %Main** %tmp.0
+	%tmp.1 = alloca %Expr*
+	store %Expr* %e, %Expr** %tmp.1
+	%tmp.2 = load %Main*, %Main** %tmp.0
+	%tmp.3 = icmp eq %Main* %tmp.2, null
+	br i1 %tmp.3, label %abort, label %ok.0
+
+ok.0:
+	%tmp.4 = getelementptr %Main, %Main* %tmp.2, i32 0, i32 0
+	%tmp.5 = load %Main_vtable*, %Main_vtable** %tmp.4
+	%tmp.6 = getelementptr %Main_vtable, %Main_vtable* %tmp.5, i32 0, i32 7
+	%tmp.7 = load %Main* (%Main*,%String*) *, %Main* (%Main*,%String*) ** %tmp.6
+	%tmp.8 = call %Main*(%Main*, %String*) %tmp.7( %Main* %tmp.2, %String* @String.38 )
+	%tmp.9 = load %Expr*, %Expr** %tmp.1
+	%tmp.10 = icmp eq %Expr* %tmp.9, null
+	br i1 %tmp.10, label %abort, label %ok.1
+
+ok.1:
+	%tmp.11 = getelementptr %Expr, %Expr* %tmp.9, i32 0, i32 0
+	%tmp.12 = load %Expr_vtable*, %Expr_vtable** %tmp.11
+	%tmp.13 = getelementptr %Expr_vtable, %Expr_vtable* %tmp.12, i32 0, i32 11
+	%tmp.14 = load %Expr* (%Expr*) *, %Expr* (%Expr*) ** %tmp.13
+	%tmp.15 = call %Expr*(%Expr*) %tmp.14( %Expr* %tmp.9 )
+	%tmp.16 = alloca i1
+	store i1 false, i1* %tmp.16
+	%tmp.17 = alloca %Expr*
+	store %Expr* null, %Expr** %tmp.17
+	br label %loop.0
+
+loop.0:
+	%tmp.18 = load i1, i1* %tmp.16
+	%tmp.19 = xor i1 %tmp.18, true
+	br i1 %tmp.19, label %true.0, label %false.0
+
+true.0:
+	%tmp.20 = load %Expr*, %Expr** %tmp.1
+	%tmp.21 = icmp eq %Expr* %tmp.20, null
+	br i1 %tmp.21, label %abort, label %ok.2
+
+ok.2:
+	%tmp.22 = getelementptr %Expr, %Expr* %tmp.20, i32 0, i32 0
+	%tmp.23 = load %Expr_vtable*, %Expr_vtable** %tmp.22
+	%tmp.24 = getelementptr %Expr_vtable, %Expr_vtable* %tmp.23, i32 0, i32 12
+	%tmp.25 = load %Expr* (%Expr*) *, %Expr* (%Expr*) ** %tmp.24
+	%tmp.26 = call %Expr*(%Expr*) %tmp.25( %Expr* %tmp.20 )
+	store %Expr* %tmp.26, %Expr** %tmp.17
+	%tmp.27 = alloca %Object*
+	%tmp.28 = load %Expr*, %Expr** %tmp.17
+	%tmp.29 = load %Expr*, %Expr** %tmp.1
+	%tmp.30 = icmp eq %Expr* %tmp.28, %tmp.29
+	br i1 %tmp.30, label %true.1, label %false.1
+
+true.1:
+	store i1 true, i1* %tmp.16
+	%tmp.32 = call %Bool* @Bool_new(  )
+	call void(%Bool*, i1) @Bool_init( %Bool* %tmp.32, i1 true )
+	%tmp.33 = bitcast %Bool* %tmp.32 to %Object*
+	store %Object* %tmp.33, %Object** %tmp.27
+	br label %end.1
+
+false.1:
+	%tmp.34 = load %Expr*, %Expr** %tmp.17
+	store %Expr* %tmp.34, %Expr** %tmp.1
+	%tmp.35 = load %Main*, %Main** %tmp.0
+	%tmp.36 = icmp eq %Main* %tmp.35, null
+	br i1 %tmp.36, label %abort, label %ok.3
+
+ok.3:
+	%tmp.37 = getelementptr %Main, %Main* %tmp.35, i32 0, i32 0
+	%tmp.38 = load %Main_vtable*, %Main_vtable** %tmp.37
+	%tmp.39 = getelementptr %Main_vtable, %Main_vtable* %tmp.38, i32 0, i32 7
+	%tmp.40 = load %Main* (%Main*,%String*) *, %Main* (%Main*,%String*) ** %tmp.39
+	%tmp.41 = call %Main*(%Main*, %String*) %tmp.40( %Main* %tmp.35, %String* @String.39 )
+	%tmp.42 = load %Expr*, %Expr** %tmp.1
+	%tmp.43 = icmp eq %Expr* %tmp.42, null
+	br i1 %tmp.43, label %abort, label %ok.4
+
+ok.4:
+	%tmp.44 = getelementptr %Expr, %Expr* %tmp.42, i32 0, i32 0
+	%tmp.45 = load %Expr_vtable*, %Expr_vtable** %tmp.44
+	%tmp.46 = getelementptr %Expr_vtable, %Expr_vtable* %tmp.45, i32 0, i32 11
+	%tmp.47 = load %Expr* (%Expr*) *, %Expr* (%Expr*) ** %tmp.46
+	%tmp.48 = call %Expr*(%Expr*) %tmp.47( %Expr* %tmp.42 )
+	%tmp.49 = bitcast %Expr* %tmp.48 to %Object*
+	store %Object* %tmp.49, %Object** %tmp.27
+	br label %end.1
+
+end.1:
+	%tmp.50 = load %Object*, %Object** %tmp.27
+	br label %loop.0
+
+false.0:
+	%tmp.51 = load %Main*, %Main** %tmp.0
+	%tmp.52 = icmp eq %Main* %tmp.51, null
+	br i1 %tmp.52, label %abort, label %ok.5
+
+ok.5:
+	%tmp.53 = getelementptr %Main, %Main* %tmp.51, i32 0, i32 0
+	%tmp.54 = load %Main_vtable*, %Main_vtable** %tmp.53
+	%tmp.55 = getelementptr %Main_vtable, %Main_vtable* %tmp.54, i32 0, i32 7
+	%tmp.56 = load %Main* (%Main*,%String*) *, %Main* (%Main*,%String*) ** %tmp.55
+	%tmp.57 = call %Main*(%Main*, %String*) %tmp.56( %Main* %tmp.51, %String* @String.1 )
+	%tmp.58 = load %Expr*, %Expr** %tmp.1
+	ret %Expr* %tmp.58
+
+abort:
+	call void @abort(  )
+	unreachable
+}
+
+define %Main* @Main_eval_class(%Main* %self) {
+
+entry:
+	%tmp.59 = alloca %Main*
+	store %Main* %self, %Main** %tmp.59
+	%tmp.60 = load %Main*, %Main** %tmp.59
+	%tmp.61 = icmp eq %Main* %tmp.60, null
+	br i1 %tmp.61, label %abort, label %ok.6
+
+ok.6:
+	%tmp.62 = getelementptr %Main, %Main* %tmp.60, i32 0, i32 0
+	%tmp.63 = load %Main_vtable*, %Main_vtable** %tmp.62
+	%tmp.64 = getelementptr %Main_vtable, %Main_vtable* %tmp.63, i32 0, i32 7
+	%tmp.65 = load %Main* (%Main*,%String*) *, %Main* (%Main*,%String*) ** %tmp.64
+	%tmp.66 = call %Main*(%Main*, %String*) %tmp.65( %Main* %tmp.60, %String* @String.40 )
+	%tmp.67 = load %Main*, %Main** %tmp.59
+	%tmp.68 = icmp eq %Main* %tmp.67, null
+	br i1 %tmp.68, label %abort, label %ok.7
+
+ok.7:
+	%tmp.69 = getelementptr %Main, %Main* %tmp.67, i32 0, i32 0
+	%tmp.70 = load %Main_vtable*, %Main_vtable** %tmp.69
+	%tmp.71 = getelementptr %Main_vtable, %Main_vtable* %tmp.70, i32 0, i32 7
+	%tmp.72 = load %Main* (%Main*,%String*) *, %Main* (%Main*,%String*) ** %tmp.71
+	%tmp.73 = call %Main*(%Main*, %String*) %tmp.72( %Main* %tmp.67, %String* @String.41 )
+	%tmp.74 = load %Main*, %Main** %tmp.59
+	%tmp.75 = icmp eq %Main* %tmp.74, null
+	br i1 %tmp.75, label %abort, label %ok.8
+
+ok.8:
+	%tmp.76 = getelementptr %Main, %Main* %tmp.74, i32 0, i32 0
+	%tmp.77 = load %Main_vtable*, %Main_vtable** %tmp.76
+	%tmp.78 = getelementptr %Main_vtable, %Main_vtable* %tmp.77, i32 0, i32 7
+	%tmp.79 = load %Main* (%Main*,%String*) *, %Main* (%Main*,%String*) ** %tmp.78
+	%tmp.80 = call %Main*(%Main*, %String*) %tmp.79( %Main* %tmp.74, %String* @String.23 )
+	ret %Main* %tmp.80
+
+abort:
+	call void @abort(  )
+	unreachable
+}
+
+define %Main* @Main_closure_class(%Main* %self) {
+
+entry:
+	%tmp.81 = alloca %Main*
+	store %Main* %self, %Main** %tmp.81
+	%tmp.82 = load %Main*, %Main** %tmp.81
+	%tmp.83 = icmp eq %Main* %tmp.82, null
+	br i1 %tmp.83, label %abort, label %ok.9
+
+ok.9:
+	%tmp.84 = getelementptr %Main, %Main* %tmp.82, i32 0, i32 0
+	%tmp.85 = load %Main_vtable*, %Main_vtable** %tmp.84
+	%tmp.86 = getelementptr %Main_vtable, %Main_vtable* %tmp.85, i32 0, i32 7
+	%tmp.87 = load %Main* (%Main*,%String*) *, %Main* (%Main*,%String*) ** %tmp.86
+	%tmp.88 = call %Main*(%Main*, %String*) %tmp.87( %Main* %tmp.82, %String* @String.42 )
+	%tmp.89 = load %Main*, %Main** %tmp.81
+	%tmp.90 = icmp eq %Main* %tmp.89, null
+	br i1 %tmp.90, label %abort, label %ok.10
+
+ok.10:
+	%tmp.91 = getelementptr %Main, %Main* %tmp.89, i32 0, i32 0
+	%tmp.92 = load %Main_vtable*, %Main_vtable** %tmp.91
+	%tmp.93 = getelementptr %Main_vtable, %Main_vtable* %tmp.92, i32 0, i32 7
+	%tmp.94 = load %Main* (%Main*,%String*) *, %Main* (%Main*,%String*) ** %tmp.93
+	%tmp.95 = call %Main*(%Main*, %String*) %tmp.94( %Main* %tmp.89, %String* @String.43 )
+	%tmp.96 = load %Main*, %Main** %tmp.81
+	%tmp.97 = icmp eq %Main* %tmp.96, null
+	br i1 %tmp.97, label %abort, label %ok.11
+
+ok.11:
+	%tmp.98 = getelementptr %Main, %Main* %tmp.96, i32 0, i32 0
+	%tmp.99 = load %Main_vtable*, %Main_vtable** %tmp.98
+	%tmp.100 = getelementptr %Main_vtable, %Main_vtable* %tmp.99, i32 0, i32 7
+	%tmp.101 = load %Main* (%Main*,%String*) *, %Main* (%Main*,%String*) ** %tmp.100
+	%tmp.102 = call %Main*(%Main*, %String*) %tmp.101( %Main* %tmp.96, %String* @String.44 )
+	%tmp.103 = load %Main*, %Main** %tmp.81
+	%tmp.104 = icmp eq %Main* %tmp.103, null
+	br i1 %tmp.104, label %abort, label %ok.12
+
+ok.12:
+	%tmp.105 = getelementptr %Main, %Main* %tmp.103, i32 0, i32 0
+	%tmp.106 = load %Main_vtable*, %Main_vtable** %tmp.105
+	%tmp.107 = getelementptr %Main_vtable, %Main_vtable* %tmp.106, i32 0, i32 7
+	%tmp.108 = load %Main* (%Main*,%String*) *, %Main* (%Main*,%String*) ** %tmp.107
+	%tmp.109 = call %Main*(%Main*, %String*) %tmp.108( %Main* %tmp.103, %String* @String.45 )
+	%tmp.110 = load %Main*, %Main** %tmp.81
+	%tmp.111 = icmp eq %Main* %tmp.110, null
+	br i1 %tmp.111, label %abort, label %ok.13
+
+ok.13:
+	%tmp.112 = getelementptr %Main, %Main* %tmp.110, i32 0, i32 0
+	%tmp.113 = load %Main_vtable*, %Main_vtable** %tmp.112
+	%tmp.114 = getelementptr %Main_vtable, %Main_vtable* %tmp.113, i32 0, i32 7
+	%tmp.115 = load %Main* (%Main*,%String*) *, %Main* (%Main*,%String*) ** %tmp.114
+	%tmp.116 = call %Main*(%Main*, %String*) %tmp.115( %Main* %tmp.110, %String* @String.46 )
+	%tmp.117 = load %Main*, %Main** %tmp.81
+	%tmp.118 = icmp eq %Main* %tmp.117, null
+	br i1 %tmp.118, label %abort, label %ok.14
+
+ok.14:
+	%tmp.119 = getelementptr %Main, %Main* %tmp.117, i32 0, i32 0
+	%tmp.120 = load %Main_vtable*, %Main_vtable** %tmp.119
+	%tmp.121 = getelementptr %Main_vtable, %Main_vtable* %tmp.120, i32 0, i32 7
+	%tmp.122 = load %Main* (%Main*,%String*) *, %Main* (%Main*,%String*) ** %tmp.121
+	%tmp.123 = call %Main*(%Main*, %String*) %tmp.122( %Main* %tmp.117, %String* @String.47 )
+	%tmp.124 = load %Main*, %Main** %tmp.81
+	%tmp.125 = icmp eq %Main* %tmp.124, null
+	br i1 %tmp.125, label %abort, label %ok.15
+
+ok.15:
+	%tmp.126 = getelementptr %Main, %Main* %tmp.124, i32 0, i32 0
+	%tmp.127 = load %Main_vtable*, %Main_vtable** %tmp.126
+	%tmp.128 = getelementptr %Main_vtable, %Main_vtable* %tmp.127, i32 0, i32 7
+	%tmp.129 = load %Main* (%Main*,%String*) *, %Main* (%Main*,%String*) ** %tmp.128
+	%tmp.130 = call %Main*(%Main*, %String*) %tmp.129( %Main* %tmp.124, %String* @String.48 )
+	%tmp.131 = load %Main*, %Main** %tmp.81
+	%tmp.132 = icmp eq %Main* %tmp.131, null
+	br i1 %tmp.132, label %abort, label %ok.16
+
+ok.16:
+	%tmp.133 = getelementptr %Main, %Main* %tmp.131, i32 0, i32 0
+	%tmp.134 = load %Main_vtable*, %Main_vtable** %tmp.133
+	%tmp.135 = getelementptr %Main_vtable, %Main_vtable* %tmp.134, i32 0, i32 7
+	%tmp.136 = load %Main* (%Main*,%String*) *, %Main* (%Main*,%String*) ** %tmp.135
+	%tmp.137 = call %Main*(%Main*, %String*) %tmp.136( %Main* %tmp.131, %String* @String.23 )
+	ret %Main* %tmp.137
+
+abort:
+	call void @abort(  )
+	unreachable
+}
+
+define %Main* @Main_gen_code(%Main* %self, %Expr* %e) {
+
+entry:
+	%tmp.138 = alloca %Main*
+	store %Main* %self, %Main** %tmp.138
+	%tmp.139 = alloca %Expr*
+	store %Expr* %e, %Expr** %tmp.139
+	%tmp.140 = call %LambdaListRef* @LambdaListRef_new(  )
+	%tmp.141 = icmp eq %LambdaListRef* %tmp.140, null
+	br i1 %tmp.141, label %abort, label %ok.17
+
+ok.17:
+	%tmp.142 = getelementptr %LambdaListRef, %LambdaListRef* %tmp.140, i32 0, i32 0
+	%tmp.143 = load %LambdaListRef_vtable*, %LambdaListRef_vtable** %tmp.142
+	%tmp.144 = getelementptr %LambdaListRef_vtable, %LambdaListRef_vtable* %tmp.143, i32 0, i32 11
+	%tmp.145 = load %LambdaListRef* (%LambdaListRef*) *, %LambdaListRef* (%LambdaListRef*) ** %tmp.144
+	%tmp.146 = call %LambdaListRef*(%LambdaListRef*) %tmp.145( %LambdaListRef* %tmp.140 )
+	%tmp.147 = alloca %LambdaListRef*
+	store %LambdaListRef* %tmp.146, %LambdaListRef** %tmp.147
+	%tmp.148 = load %Main*, %Main** %tmp.138
+	%tmp.149 = icmp eq %Main* %tmp.148, null
+	br i1 %tmp.149, label %abort, label %ok.18
+
+ok.18:
+	%tmp.150 = getelementptr %Main, %Main* %tmp.148, i32 0, i32 0
+	%tmp.151 = load %Main_vtable*, %Main_vtable** %tmp.150
+	%tmp.152 = getelementptr %Main_vtable, %Main_vtable* %tmp.151, i32 0, i32 7
+	%tmp.153 = load %Main* (%Main*,%String*) *, %Main* (%Main*,%String*) ** %tmp.152
+	%tmp.154 = call %Main*(%Main*, %String*) %tmp.153( %Main* %tmp.148, %String* @String.49 )
+	%tmp.155 = load %Expr*, %Expr** %tmp.139
+	%tmp.156 = icmp eq %Expr* %tmp.155, null
+	br i1 %tmp.156, label %abort, label %ok.19
+
+ok.19:
+	%tmp.157 = getelementptr %Expr, %Expr* %tmp.155, i32 0, i32 0
+	%tmp.158 = load %Expr_vtable*, %Expr_vtable** %tmp.157
+	%tmp.159 = getelementptr %Expr_vtable, %Expr_vtable* %tmp.158, i32 0, i32 11
+	%tmp.160 = load %Expr* (%Expr*) *, %Expr* (%Expr*) ** %tmp.159
+	%tmp.161 = call %Expr*(%Expr*) %tmp.160( %Expr* %tmp.155 )
+	%tmp.162 = load %Main*, %Main** %tmp.138
+	%tmp.163 = icmp eq %Main* %tmp.162, null
+	br i1 %tmp.163, label %abort, label %ok.20
+
+ok.20:
+	%tmp.164 = getelementptr %Main, %Main* %tmp.162, i32 0, i32 0
+	%tmp.165 = load %Main_vtable*, %Main_vtable** %tmp.164
+	%tmp.166 = getelementptr %Main_vtable, %Main_vtable* %tmp.165, i32 0, i32 7
+	%tmp.167 = load %Main* (%Main*,%String*) *, %Main* (%Main*,%String*) ** %tmp.166
+	%tmp.168 = call %Main*(%Main*, %String*) %tmp.167( %Main* %tmp.162, %String* @String.50 )
+	%tmp.169 = load %Main*, %Main** %tmp.138
+	%tmp.170 = icmp eq %Main* %tmp.169, null
+	br i1 %tmp.170, label %abort, label %ok.21
+
+ok.21:
+	%tmp.171 = getelementptr %Main, %Main* %tmp.169, i32 0, i32 0
+	%tmp.172 = load %Main_vtable*, %Main_vtable** %tmp.171
+	%tmp.173 = getelementptr %Main_vtable, %Main_vtable* %tmp.172, i32 0, i32 7
+	%tmp.174 = load %Main* (%Main*,%String*) *, %Main* (%Main*,%String*) ** %tmp.173
+	%tmp.175 = call %Main*(%Main*, %String*) %tmp.174( %Main* %tmp.169, %String* @String.51 )
+	%tmp.176 = load %Main*, %Main** %tmp.138
+	%tmp.177 = icmp eq %Main* %tmp.176, null
+	br i1 %tmp.177, label %abort, label %ok.22
+
+ok.22:
+	%tmp.178 = getelementptr %Main, %Main* %tmp.176, i32 0, i32 0
+	%tmp.179 = load %Main_vtable*, %Main_vtable** %tmp.178
+	%tmp.180 = getelementptr %Main_vtable, %Main_vtable* %tmp.179, i32 0, i32 18
+	%tmp.181 = load %Main* (%Main*) *, %Main* (%Main*) ** %tmp.180
+	%tmp.182 = call %Main*(%Main*) %tmp.181( %Main* %tmp.176 )
+	%tmp.183 = load %Main*, %Main** %tmp.138
+	%tmp.184 = icmp eq %Main* %tmp.183, null
+	br i1 %tmp.184, label %abort, label %ok.23
+
+ok.23:
+	%tmp.185 = getelementptr %Main, %Main* %tmp.183, i32 0, i32 0
+	%tmp.186 = load %Main_vtable*, %Main_vtable** %tmp.185
+	%tmp.187 = getelementptr %Main_vtable, %Main_vtable* %tmp.186, i32 0, i32 19
+	%tmp.188 = load %Main* (%Main*) *, %Main* (%Main*) ** %tmp.187
+	%tmp.189 = call %Main*(%Main*) %tmp.188( %Main* %tmp.183 )
+	%tmp.190 = load %Main*, %Main** %tmp.138
+	%tmp.191 = icmp eq %Main* %tmp.190, null
+	br i1 %tmp.191, label %abort, label %ok.24
+
+ok.24:
+	%tmp.192 = getelementptr %Main, %Main* %tmp.190, i32 0, i32 0
+	%tmp.193 = load %Main_vtable*, %Main_vtable** %tmp.192
+	%tmp.194 = getelementptr %Main_vtable, %Main_vtable* %tmp.193, i32 0, i32 7
+	%tmp.195 = load %Main* (%Main*,%String*) *, %Main* (%Main*,%String*) ** %tmp.194
+	%tmp.196 = call %Main*(%Main*, %String*) %tmp.195( %Main* %tmp.190, %String* @String.52 )
+	%tmp.197 = load %Main*, %Main** %tmp.138
+	%tmp.198 = icmp eq %Main* %tmp.197, null
+	br i1 %tmp.198, label %abort, label %ok.25
+
+ok.25:
+	%tmp.199 = getelementptr %Main, %Main* %tmp.197, i32 0, i32 0
+	%tmp.200 = load %Main_vtable*, %Main_vtable** %tmp.199
+	%tmp.201 = getelementptr %Main_vtable, %Main_vtable* %tmp.200, i32 0, i32 7
+	%tmp.202 = load %Main* (%Main*,%String*) *, %Main* (%Main*,%String*) ** %tmp.201
+	%tmp.203 = call %Main*(%Main*, %String*) %tmp.202( %Main* %tmp.197, %String* @String.53 )
+	%tmp.204 = call %VarList* @VarList_new(  )
+	%tmp.205 = load %LambdaListRef*, %LambdaListRef** %tmp.147
+	%tmp.206 = load %Expr*, %Expr** %tmp.139
+	%tmp.207 = icmp eq %Expr* %tmp.206, null
+	br i1 %tmp.207, label %abort, label %ok.26
+
+ok.26:
+	%tmp.208 = getelementptr %Expr, %Expr* %tmp.206, i32 0, i32 0
+	%tmp.209 = load %Expr_vtable*, %Expr_vtable** %tmp.208
+	%tmp.210 = getelementptr %Expr_vtable, %Expr_vtable* %tmp.209, i32 0, i32 14
+	%tmp.211 = load %Expr* (%Expr*,%VarList*,%LambdaListRef*) *, %Expr* (%Expr*,%VarList*,%LambdaListRef*) ** %tmp.210
+	%tmp.212 = call %Expr*(%Expr*, %VarList*, %LambdaListRef*) %tmp.211( %Expr* %tmp.206, %VarList* %tmp.204, %LambdaListRef* %tmp.205 )
+	%tmp.213 = load %Main*, %Main** %tmp.138
+	%tmp.214 = icmp eq %Main* %tmp.213, null
+	br i1 %tmp.214, label %abort, label %ok.27
+
+ok.27:
+	%tmp.215 = getelementptr %Main, %Main* %tmp.213, i32 0, i32 0
+	%tmp.216 = load %Main_vtable*, %Main_vtable** %tmp.215
+	%tmp.217 = getelementptr %Main_vtable, %Main_vtable* %tmp.216, i32 0, i32 7
+	%tmp.218 = load %Main* (%Main*,%String*) *, %Main* (%Main*,%String*) ** %tmp.217
+	%tmp.219 = call %Main*(%Main*, %String*) %tmp.218( %Main* %tmp.213, %String* @String.54 )
+	br label %loop.2
+
+loop.2:
+	%tmp.220 = load %LambdaListRef*, %LambdaListRef** %tmp.147
+	%tmp.221 = icmp eq %LambdaListRef* %tmp.220, null
+	br i1 %tmp.221, label %abort, label %ok.28
+
+ok.28:
+	%tmp.222 = getelementptr %LambdaListRef, %LambdaListRef* %tmp.220, i32 0, i32 0
+	%tmp.223 = load %LambdaListRef_vtable*, %LambdaListRef_vtable** %tmp.222
+	%tmp.224 = getelementptr %LambdaListRef_vtable, %LambdaListRef_vtable* %tmp.223, i32 0, i32 7
+	%tmp.225 = load i1 (%LambdaListRef*) *, i1 (%LambdaListRef*) ** %tmp.224
+	%tmp.226 = call i1(%LambdaListRef*) %tmp.225( %LambdaListRef* %tmp.220 )
+	%tmp.227 = xor i1 %tmp.226, true
+	br i1 %tmp.227, label %true.2, label %false.2
+
+true.2:
+	%tmp.228 = load %LambdaListRef*, %LambdaListRef** %tmp.147
+	%tmp.229 = icmp eq %LambdaListRef* %tmp.228, null
+	br i1 %tmp.229, label %abort, label %ok.29
+
+ok.29:
+	%tmp.230 = getelementptr %LambdaListRef, %LambdaListRef* %tmp.228, i32 0, i32 0
+	%tmp.231 = load %LambdaListRef_vtable*, %LambdaListRef_vtable** %tmp.230
+	%tmp.232 = getelementptr %LambdaListRef_vtable, %LambdaListRef_vtable* %tmp.231, i32 0, i32 8
+	%tmp.233 = load %VarList* (%LambdaListRef*) *, %VarList* (%LambdaListRef*) ** %tmp.232
+	%tmp.234 = call %VarList*(%LambdaListRef*) %tmp.233( %LambdaListRef* %tmp.228 )
+	%tmp.235 = alloca %VarList*
+	store %VarList* %tmp.234, %VarList** %tmp.235
+	%tmp.236 = load %LambdaListRef*, %LambdaListRef** %tmp.147
+	%tmp.237 = icmp eq %LambdaListRef* %tmp.236, null
+	br i1 %tmp.237, label %abort, label %ok.30
+
+ok.30:
+	%tmp.238 = getelementptr %LambdaListRef, %LambdaListRef* %tmp.236, i32 0, i32 0
+	%tmp.239 = load %LambdaListRef_vtable*, %LambdaListRef_vtable** %tmp.238
+	%tmp.240 = getelementptr %LambdaListRef_vtable, %LambdaListRef_vtable* %tmp.239, i32 0, i32 9
+	%tmp.241 = load %Lambda* (%LambdaListRef*) *, %Lambda* (%LambdaListRef*) ** %tmp.240
+	%tmp.242 = call %Lambda*(%LambdaListRef*) %tmp.241( %LambdaListRef* %tmp.236 )
+	%tmp.243 = alloca %Lambda*
+	store %Lambda* %tmp.242, %Lambda** %tmp.243
+	%tmp.244 = load %LambdaListRef*, %LambdaListRef** %tmp.147
+	%tmp.245 = icmp eq %LambdaListRef* %tmp.244, null
+	br i1 %tmp.245, label %abort, label %ok.31
+
+ok.31:
+	%tmp.246 = getelementptr %LambdaListRef, %LambdaListRef* %tmp.244, i32 0, i32 0
+	%tmp.247 = load %LambdaListRef_vtable*, %LambdaListRef_vtable** %tmp.246
+	%tmp.248 = getelementptr %LambdaListRef_vtable, %LambdaListRef_vtable* %tmp.247, i32 0, i32 10
+	%tmp.249 = load i32 (%LambdaListRef*) *, i32 (%LambdaListRef*) ** %tmp.248
+	%tmp.250 = call i32(%LambdaListRef*) %tmp.249( %LambdaListRef* %tmp.244 )
+	%tmp.251 = alloca i32
+	store i32 %tmp.250, i32* %tmp.251
+	%tmp.252 = load %LambdaListRef*, %LambdaListRef** %tmp.147
+	%tmp.253 = icmp eq %LambdaListRef* %tmp.252, null
+	br i1 %tmp.253, label %abort, label %ok.32
+
+ok.32:
+	%tmp.254 = getelementptr %LambdaListRef, %LambdaListRef* %tmp.252, i32 0, i32 0
+	%tmp.255 = load %LambdaListRef_vtable*, %LambdaListRef_vtable** %tmp.254
+	%tmp.256 = getelementptr %LambdaListRef_vtable, %LambdaListRef_vtable* %tmp.255, i32 0, i32 13
+	%tmp.257 = load %LambdaListRef* (%LambdaListRef*) *, %LambdaListRef* (%LambdaListRef*) ** %tmp.256
+	%tmp.258 = call %LambdaListRef*(%LambdaListRef*) %tmp.257( %LambdaListRef* %tmp.252 )
+	%tmp.259 = load i32, i32* %tmp.251
+	%tmp.260 = load %VarList*, %VarList** %tmp.235
+	%tmp.261 = load %LambdaListRef*, %LambdaListRef** %tmp.147
+	%tmp.262 = load %Lambda*, %Lambda** %tmp.243
+	%tmp.263 = icmp eq %Lambda* %tmp.262, null
+	br i1 %tmp.263, label %abort, label %ok.33
+
+ok.33:
+	%tmp.264 = getelementptr %Lambda, %Lambda* %tmp.262, i32 0, i32 0
+	%tmp.265 = load %Lambda_vtable*, %Lambda_vtable** %tmp.264
+	%tmp.266 = getelementptr %Lambda_vtable, %Lambda_vtable* %tmp.265, i32 0, i32 17
+	%tmp.267 = load %Lambda* (%Lambda*,i32,%VarList*,%LambdaListRef*) *, %Lambda* (%Lambda*,i32,%VarList*,%LambdaListRef*) ** %tmp.266
+	%tmp.268 = call %Lambda*(%Lambda*, i32, %VarList*, %LambdaListRef*) %tmp.267( %Lambda* %tmp.262, i32 %tmp.259, %VarList* %tmp.260, %LambdaListRef* %tmp.261 )
+	br label %loop.2
+
+false.2:
+	%tmp.269 = load %Main*, %Main** %tmp.138
+	%tmp.270 = icmp eq %Main* %tmp.269, null
+	br i1 %tmp.270, label %abort, label %ok.34
+
+ok.34:
+	%tmp.271 = getelementptr %Main, %Main* %tmp.269, i32 0, i32 0
+	%tmp.272 = load %Main_vtable*, %Main_vtable** %tmp.271
+	%tmp.273 = getelementptr %Main_vtable, %Main_vtable* %tmp.272, i32 0, i32 7
+	%tmp.274 = load %Main* (%Main*,%String*) *, %Main* (%Main*,%String*) ** %tmp.273
+	%tmp.275 = call %Main*(%Main*, %String*) %tmp.274( %Main* %tmp.269, %String* @String.50 )
+	ret %Main* %tmp.275
+
+abort:
+	call void @abort(  )
+	unreachable
+}
+
+define i32 @Main_main(%Main* %self) {
+
+entry:
+	%tmp.276 = alloca %Main*
+	store %Main* %self, %Main** %tmp.276
+	%tmp.277 = load %Main*, %Main** %tmp.276
+	%tmp.278 = icmp eq %Main* %tmp.277, null
+	br i1 %tmp.278, label %abort, label %ok.36
+
+ok.36:
+	%tmp.279 = getelementptr %Main, %Main* %tmp.277, i32 0, i32 0
+	%tmp.280 = load %Main_vtable*, %Main_vtable** %tmp.279
+	%tmp.281 = getelementptr %Main_vtable, %Main_vtable* %tmp.280, i32 0, i32 14
+	%tmp.282 = load %Expr* (%Main*) *, %Expr* (%Main*) ** %tmp.281
+	%tmp.283 = call %Expr*(%Main*) %tmp.282( %Main* %tmp.277 )
+	%tmp.284 = icmp eq %Expr* %tmp.283, null
+	br i1 %tmp.284, label %abort, label %ok.35
+
+ok.35:
+	%tmp.285 = getelementptr %Expr, %Expr* %tmp.283, i32 0, i32 0
+	%tmp.286 = load %Expr_vtable*, %Expr_vtable** %tmp.285
+	%tmp.287 = getelementptr %Expr_vtable, %Expr_vtable* %tmp.286, i32 0, i32 11
+	%tmp.288 = load %Expr* (%Expr*) *, %Expr* (%Expr*) ** %tmp.287
+	%tmp.289 = call %Expr*(%Expr*) %tmp.288( %Expr* %tmp.283 )
+	%tmp.290 = load %Main*, %Main** %tmp.276
+	%tmp.291 = icmp eq %Main* %tmp.290, null
+	br i1 %tmp.291, label %abort, label %ok.37
+
+ok.37:
+	%tmp.292 = getelementptr %Main, %Main* %tmp.290, i32 0, i32 0
+	%tmp.293 = load %Main_vtable*, %Main_vtable** %tmp.292
+	%tmp.294 = getelementptr %Main_vtable, %Main_vtable* %tmp.293, i32 0, i32 7
+	%tmp.295 = load %Main* (%Main*,%String*) *, %Main* (%Main*,%String*) ** %tmp.294
+	%tmp.296 = call %Main*(%Main*, %String*) %tmp.295( %Main* %tmp.290, %String* @String.1 )
+	%tmp.297 = load %Main*, %Main** %tmp.276
+	%tmp.298 = icmp eq %Main* %tmp.297, null
+	br i1 %tmp.298, label %abort, label %ok.39
+
+ok.39:
+	%tmp.299 = getelementptr %Main, %Main* %tmp.297, i32 0, i32 0
+	%tmp.300 = load %Main_vtable*, %Main_vtable** %tmp.299
+	%tmp.301 = getelementptr %Main_vtable, %Main_vtable* %tmp.300, i32 0, i32 15
+	%tmp.302 = load %Expr* (%Main*) *, %Expr* (%Main*) ** %tmp.301
+	%tmp.303 = call %Expr*(%Main*) %tmp.302( %Main* %tmp.297 )
+	%tmp.304 = icmp eq %Expr* %tmp.303, null
+	br i1 %tmp.304, label %abort, label %ok.38
+
+ok.38:
+	%tmp.305 = getelementptr %Expr, %Expr* %tmp.303, i32 0, i32 0
+	%tmp.306 = load %Expr_vtable*, %Expr_vtable** %tmp.305
+	%tmp.307 = getelementptr %Expr_vtable, %Expr_vtable* %tmp.306, i32 0, i32 11
+	%tmp.308 = load %Expr* (%Expr*) *, %Expr* (%Expr*) ** %tmp.307
+	%tmp.309 = call %Expr*(%Expr*) %tmp.308( %Expr* %tmp.303 )
+	%tmp.310 = load %Main*, %Main** %tmp.276
+	%tmp.311 = icmp eq %Main* %tmp.310, null
+	br i1 %tmp.311, label %abort, label %ok.40
+
+ok.40:
+	%tmp.312 = getelementptr %Main, %Main* %tmp.310, i32 0, i32 0
+	%tmp.313 = load %Main_vtable*, %Main_vtable** %tmp.312
+	%tmp.314 = getelementptr %Main_vtable, %Main_vtable* %tmp.313, i32 0, i32 7
+	%tmp.315 = load %Main* (%Main*,%String*) *, %Main* (%Main*,%String*) ** %tmp.314
+	%tmp.316 = call %Main*(%Main*, %String*) %tmp.315( %Main* %tmp.310, %String* @String.1 )
+	%tmp.317 = load %Main*, %Main** %tmp.276
+	%tmp.318 = icmp eq %Main* %tmp.317, null
+	br i1 %tmp.318, label %abort, label %ok.42
+
+ok.42:
+	%tmp.319 = getelementptr %Main, %Main* %tmp.317, i32 0, i32 0
+	%tmp.320 = load %Main_vtable*, %Main_vtable** %tmp.319
+	%tmp.321 = getelementptr %Main_vtable, %Main_vtable* %tmp.320, i32 0, i32 16
+	%tmp.322 = load %Expr* (%Main*) *, %Expr* (%Main*) ** %tmp.321
+	%tmp.323 = call %Expr*(%Main*) %tmp.322( %Main* %tmp.317 )
+	%tmp.324 = icmp eq %Expr* %tmp.323, null
+	br i1 %tmp.324, label %abort, label %ok.41
+
+ok.41:
+	%tmp.325 = getelementptr %Expr, %Expr* %tmp.323, i32 0, i32 0
+	%tmp.326 = load %Expr_vtable*, %Expr_vtable** %tmp.325
+	%tmp.327 = getelementptr %Expr_vtable, %Expr_vtable* %tmp.326, i32 0, i32 11
+	%tmp.328 = load %Expr* (%Expr*) *, %Expr* (%Expr*) ** %tmp.327
+	%tmp.329 = call %Expr*(%Expr*) %tmp.328( %Expr* %tmp.323 )
+	%tmp.330 = load %Main*, %Main** %tmp.276
+	%tmp.331 = icmp eq %Main* %tmp.330, null
+	br i1 %tmp.331, label %abort, label %ok.43
+
+ok.43:
+	%tmp.332 = getelementptr %Main, %Main* %tmp.330, i32 0, i32 0
+	%tmp.333 = load %Main_vtable*, %Main_vtable** %tmp.332
+	%tmp.334 = getelementptr %Main_vtable, %Main_vtable* %tmp.333, i32 0, i32 7
+	%tmp.335 = load %Main* (%Main*,%String*) *, %Main* (%Main*,%String*) ** %tmp.334
+	%tmp.336 = call %Main*(%Main*, %String*) %tmp.335( %Main* %tmp.330, %String* @String.1 )
+	%tmp.337 = load %Main*, %Main** %tmp.276
+	%tmp.338 = icmp eq %Main* %tmp.337, null
+	br i1 %tmp.338, label %abort, label %ok.48
+
+ok.48:
+	%tmp.339 = getelementptr %Main, %Main* %tmp.337, i32 0, i32 0
+	%tmp.340 = load %Main_vtable*, %Main_vtable** %tmp.339
+	%tmp.341 = getelementptr %Main_vtable, %Main_vtable* %tmp.340, i32 0, i32 16
+	%tmp.342 = load %Expr* (%Main*) *, %Expr* (%Main*) ** %tmp.341
+	%tmp.343 = call %Expr*(%Main*) %tmp.342( %Main* %tmp.337 )
+	%tmp.344 = load %Main*, %Main** %tmp.276
+	%tmp.345 = icmp eq %Main* %tmp.344, null
+	br i1 %tmp.345, label %abort, label %ok.49
+
+ok.49:
+	%tmp.346 = getelementptr %Main, %Main* %tmp.344, i32 0, i32 0
+	%tmp.347 = load %Main_vtable*, %Main_vtable** %tmp.346
+	%tmp.348 = getelementptr %Main_vtable, %Main_vtable* %tmp.347, i32 0, i32 15
+	%tmp.349 = load %Expr* (%Main*) *, %Expr* (%Main*) ** %tmp.348
+	%tmp.350 = call %Expr*(%Main*) %tmp.349( %Main* %tmp.344 )
+	%tmp.351 = load %Main*, %Main** %tmp.276
+	%tmp.352 = icmp eq %Main* %tmp.351, null
+	br i1 %tmp.352, label %abort, label %ok.47
+
+ok.47:
+	%tmp.353 = getelementptr %Main, %Main* %tmp.351, i32 0, i32 0
+	%tmp.354 = load %Main_vtable*, %Main_vtable** %tmp.353
+	%tmp.355 = getelementptr %Main_vtable, %Main_vtable* %tmp.354, i32 0, i32 13
+	%tmp.356 = load %App* (%Main*,%Expr*,%Expr*) *, %App* (%Main*,%Expr*,%Expr*) ** %tmp.355
+	%tmp.357 = call %App*(%Main*, %Expr*, %Expr*) %tmp.356( %Main* %tmp.351, %Expr* %tmp.343, %Expr* %tmp.350 )
+	%tmp.358 = load %Main*, %Main** %tmp.276
+	%tmp.359 = icmp eq %Main* %tmp.358, null
+	br i1 %tmp.359, label %abort, label %ok.50
+
+ok.50:
+	%tmp.360 = getelementptr %Main, %Main* %tmp.358, i32 0, i32 0
+	%tmp.361 = load %Main_vtable*, %Main_vtable** %tmp.360
+	%tmp.362 = getelementptr %Main_vtable, %Main_vtable* %tmp.361, i32 0, i32 14
+	%tmp.363 = load %Expr* (%Main*) *, %Expr* (%Main*) ** %tmp.362
+	%tmp.364 = call %Expr*(%Main*) %tmp.363( %Main* %tmp.358 )
+	%tmp.365 = load %Main*, %Main** %tmp.276
+	%tmp.366 = icmp eq %Main* %tmp.365, null
+	br i1 %tmp.366, label %abort, label %ok.46
+
+ok.46:
+	%tmp.367 = getelementptr %Main, %Main* %tmp.365, i32 0, i32 0
+	%tmp.368 = load %Main_vtable*, %Main_vtable** %tmp.367
+	%tmp.369 = getelementptr %Main_vtable, %Main_vtable* %tmp.368, i32 0, i32 13
+	%tmp.370 = load %App* (%Main*,%Expr*,%Expr*) *, %App* (%Main*,%Expr*,%Expr*) ** %tmp.369
+	%tmp.371 = bitcast %App* %tmp.357 to %Expr*
+	%tmp.372 = call %App*(%Main*, %Expr*, %Expr*) %tmp.370( %Main* %tmp.365, %Expr* %tmp.371, %Expr* %tmp.364 )
+	%tmp.373 = load %Main*, %Main** %tmp.276
+	%tmp.374 = icmp eq %Main* %tmp.373, null
+	br i1 %tmp.374, label %abort, label %ok.51
+
+ok.51:
+	%tmp.375 = getelementptr %Main, %Main* %tmp.373, i32 0, i32 0
+	%tmp.376 = load %Main_vtable*, %Main_vtable** %tmp.375
+	%tmp.377 = getelementptr %Main_vtable, %Main_vtable* %tmp.376, i32 0, i32 14
+	%tmp.378 = load %Expr* (%Main*) *, %Expr* (%Main*) ** %tmp.377
+	%tmp.379 = call %Expr*(%Main*) %tmp.378( %Main* %tmp.373 )
+	%tmp.380 = load %Main*, %Main** %tmp.276
+	%tmp.381 = icmp eq %Main* %tmp.380, null
+	br i1 %tmp.381, label %abort, label %ok.45
+
+ok.45:
+	%tmp.382 = getelementptr %Main, %Main* %tmp.380, i32 0, i32 0
+	%tmp.383 = load %Main_vtable*, %Main_vtable** %tmp.382
+	%tmp.384 = getelementptr %Main_vtable, %Main_vtable* %tmp.383, i32 0, i32 13
+	%tmp.385 = load %App* (%Main*,%Expr*,%Expr*) *, %App* (%Main*,%Expr*,%Expr*) ** %tmp.384
+	%tmp.386 = bitcast %App* %tmp.372 to %Expr*
+	%tmp.387 = call %App*(%Main*, %Expr*, %Expr*) %tmp.385( %Main* %tmp.380, %Expr* %tmp.386, %Expr* %tmp.379 )
+	%tmp.388 = load %Main*, %Main** %tmp.276
+	%tmp.389 = icmp eq %Main* %tmp.388, null
+	br i1 %tmp.389, label %abort, label %ok.44
+
+ok.44:
+	%tmp.390 = getelementptr %Main, %Main* %tmp.388, i32 0, i32 0
+	%tmp.391 = load %Main_vtable*, %Main_vtable** %tmp.390
+	%tmp.392 = getelementptr %Main_vtable, %Main_vtable* %tmp.391, i32 0, i32 17
+	%tmp.393 = load %Expr* (%Main*,%Expr*) *, %Expr* (%Main*,%Expr*) ** %tmp.392
+	%tmp.394 = bitcast %App* %tmp.387 to %Expr*
+	%tmp.395 = call %Expr*(%Main*, %Expr*) %tmp.393( %Main* %tmp.388, %Expr* %tmp.394 )
+	%tmp.396 = load %Main*, %Main** %tmp.276
+	%tmp.397 = icmp eq %Main* %tmp.396, null
+	br i1 %tmp.397, label %abort, label %ok.55
+
+ok.55:
+	%tmp.398 = getelementptr %Main, %Main* %tmp.396, i32 0, i32 0
+	%tmp.399 = load %Main_vtable*, %Main_vtable** %tmp.398
+	%tmp.400 = getelementptr %Main_vtable, %Main_vtable* %tmp.399, i32 0, i32 15
+	%tmp.401 = load %Expr* (%Main*) *, %Expr* (%Main*) ** %tmp.400
+	%tmp.402 = call %Expr*(%Main*) %tmp.401( %Main* %tmp.396 )
+	%tmp.403 = load %Main*, %Main** %tmp.276
+	%tmp.404 = icmp eq %Main* %tmp.403, null
+	br i1 %tmp.404, label %abort, label %ok.56
+
+ok.56:
+	%tmp.405 = getelementptr %Main, %Main* %tmp.403, i32 0, i32 0
+	%tmp.406 = load %Main_vtable*, %Main_vtable** %tmp.405
+	%tmp.407 = getelementptr %Main_vtable, %Main_vtable* %tmp.406, i32 0, i32 14
+	%tmp.408 = load %Expr* (%Main*) *, %Expr* (%Main*) ** %tmp.407
+	%tmp.409 = call %Expr*(%Main*) %tmp.408( %Main* %tmp.403 )
+	%tmp.410 = load %Main*, %Main** %tmp.276
+	%tmp.411 = icmp eq %Main* %tmp.410, null
+	br i1 %tmp.411, label %abort, label %ok.54
+
+ok.54:
+	%tmp.412 = getelementptr %Main, %Main* %tmp.410, i32 0, i32 0
+	%tmp.413 = load %Main_vtable*, %Main_vtable** %tmp.412
+	%tmp.414 = getelementptr %Main_vtable, %Main_vtable* %tmp.413, i32 0, i32 13
+	%tmp.415 = load %App* (%Main*,%Expr*,%Expr*) *, %App* (%Main*,%Expr*,%Expr*) ** %tmp.414
+	%tmp.416 = call %App*(%Main*, %Expr*, %Expr*) %tmp.415( %Main* %tmp.410, %Expr* %tmp.402, %Expr* %tmp.409 )
+	%tmp.417 = load %Main*, %Main** %tmp.276
+	%tmp.418 = icmp eq %Main* %tmp.417, null
+	br i1 %tmp.418, label %abort, label %ok.57
+
+ok.57:
+	%tmp.419 = getelementptr %Main, %Main* %tmp.417, i32 0, i32 0
+	%tmp.420 = load %Main_vtable*, %Main_vtable** %tmp.419
+	%tmp.421 = getelementptr %Main_vtable, %Main_vtable* %tmp.420, i32 0, i32 14
+	%tmp.422 = load %Expr* (%Main*) *, %Expr* (%Main*) ** %tmp.421
+	%tmp.423 = call %Expr*(%Main*) %tmp.422( %Main* %tmp.417 )
+	%tmp.424 = load %Main*, %Main** %tmp.276
+	%tmp.425 = icmp eq %Main* %tmp.424, null
+	br i1 %tmp.425, label %abort, label %ok.53
+
+ok.53:
+	%tmp.426 = getelementptr %Main, %Main* %tmp.424, i32 0, i32 0
+	%tmp.427 = load %Main_vtable*, %Main_vtable** %tmp.426
+	%tmp.428 = getelementptr %Main_vtable, %Main_vtable* %tmp.427, i32 0, i32 13
+	%tmp.429 = load %App* (%Main*,%Expr*,%Expr*) *, %App* (%Main*,%Expr*,%Expr*) ** %tmp.428
+	%tmp.430 = bitcast %App* %tmp.416 to %Expr*
+	%tmp.431 = call %App*(%Main*, %Expr*, %Expr*) %tmp.429( %Main* %tmp.424, %Expr* %tmp.430, %Expr* %tmp.423 )
+	%tmp.432 = load %Main*, %Main** %tmp.276
+	%tmp.433 = icmp eq %Main* %tmp.432, null
+	br i1 %tmp.433, label %abort, label %ok.52
+
+ok.52:
+	%tmp.434 = getelementptr %Main, %Main* %tmp.432, i32 0, i32 0
+	%tmp.435 = load %Main_vtable*, %Main_vtable** %tmp.434
+	%tmp.436 = getelementptr %Main_vtable, %Main_vtable* %tmp.435, i32 0, i32 17
+	%tmp.437 = load %Expr* (%Main*,%Expr*) *, %Expr* (%Main*,%Expr*) ** %tmp.436
+	%tmp.438 = bitcast %App* %tmp.431 to %Expr*
+	%tmp.439 = call %Expr*(%Main*, %Expr*) %tmp.437( %Main* %tmp.432, %Expr* %tmp.438 )
+	%tmp.440 = load %Main*, %Main** %tmp.276
+	%tmp.441 = icmp eq %Main* %tmp.440, null
+	br i1 %tmp.441, label %abort, label %ok.60
+
+ok.60:
+	%tmp.442 = getelementptr %Main, %Main* %tmp.440, i32 0, i32 0
+	%tmp.443 = load %Main_vtable*, %Main_vtable** %tmp.442
+	%tmp.444 = getelementptr %Main_vtable, %Main_vtable* %tmp.443, i32 0, i32 14
+	%tmp.445 = load %Expr* (%Main*) *, %Expr* (%Main*) ** %tmp.444
+	%tmp.446 = call %Expr*(%Main*) %tmp.445( %Main* %tmp.440 )
+	%tmp.447 = load %Main*, %Main** %tmp.276
+	%tmp.448 = icmp eq %Main* %tmp.447, null
+	br i1 %tmp.448, label %abort, label %ok.61
+
+ok.61:
+	%tmp.449 = getelementptr %Main, %Main* %tmp.447, i32 0, i32 0
+	%tmp.450 = load %Main_vtable*, %Main_vtable** %tmp.449
+	%tmp.451 = getelementptr %Main_vtable, %Main_vtable* %tmp.450, i32 0, i32 14
+	%tmp.452 = load %Expr* (%Main*) *, %Expr* (%Main*) ** %tmp.451
+	%tmp.453 = call %Expr*(%Main*) %tmp.452( %Main* %tmp.447 )
+	%tmp.454 = load %Main*, %Main** %tmp.276
+	%tmp.455 = icmp eq %Main* %tmp.454, null
+	br i1 %tmp.455, label %abort, label %ok.59
+
+ok.59:
+	%tmp.456 = getelementptr %Main, %Main* %tmp.454, i32 0, i32 0
+	%tmp.457 = load %Main_vtable*, %Main_vtable** %tmp.456
+	%tmp.458 = getelementptr %Main_vtable, %Main_vtable* %tmp.457, i32 0, i32 13
+	%tmp.459 = load %App* (%Main*,%Expr*,%Expr*) *, %App* (%Main*,%Expr*,%Expr*) ** %tmp.458
+	%tmp.460 = call %App*(%Main*, %Expr*, %Expr*) %tmp.459( %Main* %tmp.454, %Expr* %tmp.446, %Expr* %tmp.453 )
+	%tmp.461 = load %Main*, %Main** %tmp.276
+	%tmp.462 = icmp eq %Main* %tmp.461, null
+	br i1 %tmp.462, label %abort, label %ok.58
+
+ok.58:
+	%tmp.463 = getelementptr %Main, %Main* %tmp.461, i32 0, i32 0
+	%tmp.464 = load %Main_vtable*, %Main_vtable** %tmp.463
+	%tmp.465 = getelementptr %Main_vtable, %Main_vtable* %tmp.464, i32 0, i32 20
+	%tmp.466 = load %Main* (%Main*,%Expr*) *, %Main* (%Main*,%Expr*) ** %tmp.465
+	%tmp.467 = bitcast %App* %tmp.460 to %Expr*
+	%tmp.468 = call %Main*(%Main*, %Expr*) %tmp.466( %Main* %tmp.461, %Expr* %tmp.467 )
+	%tmp.469 = load %Main*, %Main** %tmp.276
+	%tmp.470 = icmp eq %Main* %tmp.469, null
+	br i1 %tmp.470, label %abort, label %ok.66
+
+ok.66:
+	%tmp.471 = getelementptr %Main, %Main* %tmp.469, i32 0, i32 0
+	%tmp.472 = load %Main_vtable*, %Main_vtable** %tmp.471
+	%tmp.473 = getelementptr %Main_vtable, %Main_vtable* %tmp.472, i32 0, i32 16
+	%tmp.474 = load %Expr* (%Main*) *, %Expr* (%Main*) ** %tmp.473
+	%tmp.475 = call %Expr*(%Main*) %tmp.474( %Main* %tmp.469 )
+	%tmp.476 = load %Main*, %Main** %tmp.276
+	%tmp.477 = icmp eq %Main* %tmp.476, null
+	br i1 %tmp.477, label %abort, label %ok.67
+
+ok.67:
+	%tmp.478 = getelementptr %Main, %Main* %tmp.476, i32 0, i32 0
+	%tmp.479 = load %Main_vtable*, %Main_vtable** %tmp.478
+	%tmp.480 = getelementptr %Main_vtable, %Main_vtable* %tmp.479, i32 0, i32 15
+	%tmp.481 = load %Expr* (%Main*) *, %Expr* (%Main*) ** %tmp.480
+	%tmp.482 = call %Expr*(%Main*) %tmp.481( %Main* %tmp.476 )
+	%tmp.483 = load %Main*, %Main** %tmp.276
+	%tmp.484 = icmp eq %Main* %tmp.483, null
+	br i1 %tmp.484, label %abort, label %ok.65
+
+ok.65:
+	%tmp.485 = getelementptr %Main, %Main* %tmp.483, i32 0, i32 0
+	%tmp.486 = load %Main_vtable*, %Main_vtable** %tmp.485
+	%tmp.487 = getelementptr %Main_vtable, %Main_vtable* %tmp.486, i32 0, i32 13
+	%tmp.488 = load %App* (%Main*,%Expr*,%Expr*) *, %App* (%Main*,%Expr*,%Expr*) ** %tmp.487
+	%tmp.489 = call %App*(%Main*, %Expr*, %Expr*) %tmp.488( %Main* %tmp.483, %Expr* %tmp.475, %Expr* %tmp.482 )
+	%tmp.490 = load %Main*, %Main** %tmp.276
+	%tmp.491 = icmp eq %Main* %tmp.490, null
+	br i1 %tmp.491, label %abort, label %ok.68
+
+ok.68:
+	%tmp.492 = getelementptr %Main, %Main* %tmp.490, i32 0, i32 0
+	%tmp.493 = load %Main_vtable*, %Main_vtable** %tmp.492
+	%tmp.494 = getelementptr %Main_vtable, %Main_vtable* %tmp.493, i32 0, i32 14
+	%tmp.495 = load %Expr* (%Main*) *, %Expr* (%Main*) ** %tmp.494
+	%tmp.496 = call %Expr*(%Main*) %tmp.495( %Main* %tmp.490 )
+	%tmp.497 = load %Main*, %Main** %tmp.276
+	%tmp.498 = icmp eq %Main* %tmp.497, null
+	br i1 %tmp.498, label %abort, label %ok.64
+
+ok.64:
+	%tmp.499 = getelementptr %Main, %Main* %tmp.497, i32 0, i32 0
+	%tmp.500 = load %Main_vtable*, %Main_vtable** %tmp.499
+	%tmp.501 = getelementptr %Main_vtable, %Main_vtable* %tmp.500, i32 0, i32 13
+	%tmp.502 = load %App* (%Main*,%Expr*,%Expr*) *, %App* (%Main*,%Expr*,%Expr*) ** %tmp.501
+	%tmp.503 = bitcast %App* %tmp.489 to %Expr*
+	%tmp.504 = call %App*(%Main*, %Expr*, %Expr*) %tmp.502( %Main* %tmp.497, %Expr* %tmp.503, %Expr* %tmp.496 )
+	%tmp.505 = load %Main*, %Main** %tmp.276
+	%tmp.506 = icmp eq %Main* %tmp.505, null
+	br i1 %tmp.506, label %abort, label %ok.69
+
+ok.69:
+	%tmp.507 = getelementptr %Main, %Main* %tmp.505, i32 0, i32 0
+	%tmp.508 = load %Main_vtable*, %Main_vtable** %tmp.507
+	%tmp.509 = getelementptr %Main_vtable, %Main_vtable* %tmp.508, i32 0, i32 14
+	%tmp.510 = load %Expr* (%Main*) *, %Expr* (%Main*) ** %tmp.509
+	%tmp.511 = call %Expr*(%Main*) %tmp.510( %Main* %tmp.505 )
+	%tmp.512 = load %Main*, %Main** %tmp.276
+	%tmp.513 = icmp eq %Main* %tmp.512, null
+	br i1 %tmp.513, label %abort, label %ok.63
+
+ok.63:
+	%tmp.514 = getelementptr %Main, %Main* %tmp.512, i32 0, i32 0
+	%tmp.515 = load %Main_vtable*, %Main_vtable** %tmp.514
+	%tmp.516 = getelementptr %Main_vtable, %Main_vtable* %tmp.515, i32 0, i32 13
+	%tmp.517 = load %App* (%Main*,%Expr*,%Expr*) *, %App* (%Main*,%Expr*,%Expr*) ** %tmp.516
+	%tmp.518 = bitcast %App* %tmp.504 to %Expr*
+	%tmp.519 = call %App*(%Main*, %Expr*, %Expr*) %tmp.517( %Main* %tmp.512, %Expr* %tmp.518, %Expr* %tmp.511 )
+	%tmp.520 = load %Main*, %Main** %tmp.276
+	%tmp.521 = icmp eq %Main* %tmp.520, null
+	br i1 %tmp.521, label %abort, label %ok.62
+
+ok.62:
+	%tmp.522 = getelementptr %Main, %Main* %tmp.520, i32 0, i32 0
+	%tmp.523 = load %Main_vtable*, %Main_vtable** %tmp.522
+	%tmp.524 = getelementptr %Main_vtable, %Main_vtable* %tmp.523, i32 0, i32 20
+	%tmp.525 = load %Main* (%Main*,%Expr*) *, %Main* (%Main*,%Expr*) ** %tmp.524
+	%tmp.526 = bitcast %App* %tmp.519 to %Expr*
+	%tmp.527 = call %Main*(%Main*, %Expr*) %tmp.525( %Main* %tmp.520, %Expr* %tmp.526 )
+	%tmp.528 = load %Main*, %Main** %tmp.276
+	%tmp.529 = icmp eq %Main* %tmp.528, null
+	br i1 %tmp.529, label %abort, label %ok.79
+
+ok.79:
+	%tmp.530 = getelementptr %Main, %Main* %tmp.528, i32 0, i32 0
+	%tmp.531 = load %Main_vtable*, %Main_vtable** %tmp.530
+	%tmp.532 = getelementptr %Main_vtable, %Main_vtable* %tmp.531, i32 0, i32 14
+	%tmp.533 = load %Expr* (%Main*) *, %Expr* (%Main*) ** %tmp.532
+	%tmp.534 = call %Expr*(%Main*) %tmp.533( %Main* %tmp.528 )
+	%tmp.535 = load %Main*, %Main** %tmp.276
+	%tmp.536 = icmp eq %Main* %tmp.535, null
+	br i1 %tmp.536, label %abort, label %ok.80
+
+ok.80:
+	%tmp.537 = getelementptr %Main, %Main* %tmp.535, i32 0, i32 0
+	%tmp.538 = load %Main_vtable*, %Main_vtable** %tmp.537
+	%tmp.539 = getelementptr %Main_vtable, %Main_vtable* %tmp.538, i32 0, i32 15
+	%tmp.540 = load %Expr* (%Main*) *, %Expr* (%Main*) ** %tmp.539
+	%tmp.541 = call %Expr*(%Main*) %tmp.540( %Main* %tmp.535 )
+	%tmp.542 = load %Main*, %Main** %tmp.276
+	%tmp.543 = icmp eq %Main* %tmp.542, null
+	br i1 %tmp.543, label %abort, label %ok.78
+
+ok.78:
+	%tmp.544 = getelementptr %Main, %Main* %tmp.542, i32 0, i32 0
+	%tmp.545 = load %Main_vtable*, %Main_vtable** %tmp.544
+	%tmp.546 = getelementptr %Main_vtable, %Main_vtable* %tmp.545, i32 0, i32 13
+	%tmp.547 = load %App* (%Main*,%Expr*,%Expr*) *, %App* (%Main*,%Expr*,%Expr*) ** %tmp.546
+	%tmp.548 = call %App*(%Main*, %Expr*, %Expr*) %tmp.547( %Main* %tmp.542, %Expr* %tmp.534, %Expr* %tmp.541 )
+	%tmp.549 = load %Main*, %Main** %tmp.276
+	%tmp.550 = icmp eq %Main* %tmp.549, null
+	br i1 %tmp.550, label %abort, label %ok.81
+
+ok.81:
+	%tmp.551 = getelementptr %Main, %Main* %tmp.549, i32 0, i32 0
+	%tmp.552 = load %Main_vtable*, %Main_vtable** %tmp.551
+	%tmp.553 = getelementptr %Main_vtable, %Main_vtable* %tmp.552, i32 0, i32 16
+	%tmp.554 = load %Expr* (%Main*) *, %Expr* (%Main*) ** %tmp.553
+	%tmp.555 = call %Expr*(%Main*) %tmp.554( %Main* %tmp.549 )
+	%tmp.556 = load %Main*, %Main** %tmp.276
+	%tmp.557 = icmp eq %Main* %tmp.556, null
+	br i1 %tmp.557, label %abort, label %ok.77
+
+ok.77:
+	%tmp.558 = getelementptr %Main, %Main* %tmp.556, i32 0, i32 0
+	%tmp.559 = load %Main_vtable*, %Main_vtable** %tmp.558
+	%tmp.560 = getelementptr %Main_vtable, %Main_vtable* %tmp.559, i32 0, i32 13
+	%tmp.561 = load %App* (%Main*,%Expr*,%Expr*) *, %App* (%Main*,%Expr*,%Expr*) ** %tmp.560
+	%tmp.562 = bitcast %App* %tmp.548 to %Expr*
+	%tmp.563 = call %App*(%Main*, %Expr*, %Expr*) %tmp.561( %Main* %tmp.556, %Expr* %tmp.562, %Expr* %tmp.555 )
+	%tmp.564 = load %Main*, %Main** %tmp.276
+	%tmp.565 = icmp eq %Main* %tmp.564, null
+	br i1 %tmp.565, label %abort, label %ok.82
+
+ok.82:
+	%tmp.566 = getelementptr %Main, %Main* %tmp.564, i32 0, i32 0
+	%tmp.567 = load %Main_vtable*, %Main_vtable** %tmp.566
+	%tmp.568 = getelementptr %Main_vtable, %Main_vtable* %tmp.567, i32 0, i32 16
+	%tmp.569 = load %Expr* (%Main*) *, %Expr* (%Main*) ** %tmp.568
+	%tmp.570 = call %Expr*(%Main*) %tmp.569( %Main* %tmp.564 )
+	%tmp.571 = load %Main*, %Main** %tmp.276
+	%tmp.572 = icmp eq %Main* %tmp.571, null
+	br i1 %tmp.572, label %abort, label %ok.76
+
+ok.76:
+	%tmp.573 = getelementptr %Main, %Main* %tmp.571, i32 0, i32 0
+	%tmp.574 = load %Main_vtable*, %Main_vtable** %tmp.573
+	%tmp.575 = getelementptr %Main_vtable, %Main_vtable* %tmp.574, i32 0, i32 13
+	%tmp.576 = load %App* (%Main*,%Expr*,%Expr*) *, %App* (%Main*,%Expr*,%Expr*) ** %tmp.575
+	%tmp.577 = bitcast %App* %tmp.563 to %Expr*
+	%tmp.578 = call %App*(%Main*, %Expr*, %Expr*) %tmp.576( %Main* %tmp.571, %Expr* %tmp.577, %Expr* %tmp.570 )
+	%tmp.579 = load %Main*, %Main** %tmp.276
+	%tmp.580 = icmp eq %Main* %tmp.579, null
+	br i1 %tmp.580, label %abort, label %ok.83
+
+ok.83:
+	%tmp.581 = getelementptr %Main, %Main* %tmp.579, i32 0, i32 0
+	%tmp.582 = load %Main_vtable*, %Main_vtable** %tmp.581
+	%tmp.583 = getelementptr %Main_vtable, %Main_vtable* %tmp.582, i32 0, i32 15
+	%tmp.584 = load %Expr* (%Main*) *, %Expr* (%Main*) ** %tmp.583
+	%tmp.585 = call %Expr*(%Main*) %tmp.584( %Main* %tmp.579 )
+	%tmp.586 = load %Main*, %Main** %tmp.276
+	%tmp.587 = icmp eq %Main* %tmp.586, null
+	br i1 %tmp.587, label %abort, label %ok.75
+
+ok.75:
+	%tmp.588 = getelementptr %Main, %Main* %tmp.586, i32 0, i32 0
+	%tmp.589 = load %Main_vtable*, %Main_vtable** %tmp.588
+	%tmp.590 = getelementptr %Main_vtable, %Main_vtable* %tmp.589, i32 0, i32 13
+	%tmp.591 = load %App* (%Main*,%Expr*,%Expr*) *, %App* (%Main*,%Expr*,%Expr*) ** %tmp.590
+	%tmp.592 = bitcast %App* %tmp.578 to %Expr*
+	%tmp.593 = call %App*(%Main*, %Expr*, %Expr*) %tmp.591( %Main* %tmp.586, %Expr* %tmp.592, %Expr* %tmp.585 )
+	%tmp.594 = load %Main*, %Main** %tmp.276
+	%tmp.595 = icmp eq %Main* %tmp.594, null
+	br i1 %tmp.595, label %abort, label %ok.84
+
+ok.84:
+	%tmp.596 = getelementptr %Main, %Main* %tmp.594, i32 0, i32 0
+	%tmp.597 = load %Main_vtable*, %Main_vtable** %tmp.596
+	%tmp.598 = getelementptr %Main_vtable, %Main_vtable* %tmp.597, i32 0, i32 16
+	%tmp.599 = load %Expr* (%Main*) *, %Expr* (%Main*) ** %tmp.598
+	%tmp.600 = call %Expr*(%Main*) %tmp.599( %Main* %tmp.594 )
+	%tmp.601 = load %Main*, %Main** %tmp.276
+	%tmp.602 = icmp eq %Main* %tmp.601, null
+	br i1 %tmp.602, label %abort, label %ok.74
+
+ok.74:
+	%tmp.603 = getelementptr %Main, %Main* %tmp.601, i32 0, i32 0
+	%tmp.604 = load %Main_vtable*, %Main_vtable** %tmp.603
+	%tmp.605 = getelementptr %Main_vtable, %Main_vtable* %tmp.604, i32 0, i32 13
+	%tmp.606 = load %App* (%Main*,%Expr*,%Expr*) *, %App* (%Main*,%Expr*,%Expr*) ** %tmp.605
+	%tmp.607 = bitcast %App* %tmp.593 to %Expr*
+	%tmp.608 = call %App*(%Main*, %Expr*, %Expr*) %tmp.606( %Main* %tmp.601, %Expr* %tmp.607, %Expr* %tmp.600 )
+	%tmp.609 = load %Main*, %Main** %tmp.276
+	%tmp.610 = icmp eq %Main* %tmp.609, null
+	br i1 %tmp.610, label %abort, label %ok.85
+
+ok.85:
+	%tmp.611 = getelementptr %Main, %Main* %tmp.609, i32 0, i32 0
+	%tmp.612 = load %Main_vtable*, %Main_vtable** %tmp.611
+	%tmp.613 = getelementptr %Main_vtable, %Main_vtable* %tmp.612, i32 0, i32 14
+	%tmp.614 = load %Expr* (%Main*) *, %Expr* (%Main*) ** %tmp.613
+	%tmp.615 = call %Expr*(%Main*) %tmp.614( %Main* %tmp.609 )
+	%tmp.616 = load %Main*, %Main** %tmp.276
+	%tmp.617 = icmp eq %Main* %tmp.616, null
+	br i1 %tmp.617, label %abort, label %ok.73
+
+ok.73:
+	%tmp.618 = getelementptr %Main, %Main* %tmp.616, i32 0, i32 0
+	%tmp.619 = load %Main_vtable*, %Main_vtable** %tmp.618
+	%tmp.620 = getelementptr %Main_vtable, %Main_vtable* %tmp.619, i32 0, i32 13
+	%tmp.621 = load %App* (%Main*,%Expr*,%Expr*) *, %App* (%Main*,%Expr*,%Expr*) ** %tmp.620
+	%tmp.622 = bitcast %App* %tmp.608 to %Expr*
+	%tmp.623 = call %App*(%Main*, %Expr*, %Expr*) %tmp.621( %Main* %tmp.616, %Expr* %tmp.622, %Expr* %tmp.615 )
+	%tmp.624 = load %Main*, %Main** %tmp.276
+	%tmp.625 = icmp eq %Main* %tmp.624, null
+	br i1 %tmp.625, label %abort, label %ok.86
+
+ok.86:
+	%tmp.626 = getelementptr %Main, %Main* %tmp.624, i32 0, i32 0
+	%tmp.627 = load %Main_vtable*, %Main_vtable** %tmp.626
+	%tmp.628 = getelementptr %Main_vtable, %Main_vtable* %tmp.627, i32 0, i32 15
+	%tmp.629 = load %Expr* (%Main*) *, %Expr* (%Main*) ** %tmp.628
+	%tmp.630 = call %Expr*(%Main*) %tmp.629( %Main* %tmp.624 )
+	%tmp.631 = load %Main*, %Main** %tmp.276
+	%tmp.632 = icmp eq %Main* %tmp.631, null
+	br i1 %tmp.632, label %abort, label %ok.72
+
+ok.72:
+	%tmp.633 = getelementptr %Main, %Main* %tmp.631, i32 0, i32 0
+	%tmp.634 = load %Main_vtable*, %Main_vtable** %tmp.633
+	%tmp.635 = getelementptr %Main_vtable, %Main_vtable* %tmp.634, i32 0, i32 13
+	%tmp.636 = load %App* (%Main*,%Expr*,%Expr*) *, %App* (%Main*,%Expr*,%Expr*) ** %tmp.635
+	%tmp.637 = bitcast %App* %tmp.623 to %Expr*
+	%tmp.638 = call %App*(%Main*, %Expr*, %Expr*) %tmp.636( %Main* %tmp.631, %Expr* %tmp.637, %Expr* %tmp.630 )
+	%tmp.639 = load %Main*, %Main** %tmp.276
+	%tmp.640 = icmp eq %Main* %tmp.639, null
+	br i1 %tmp.640, label %abort, label %ok.87
+
+ok.87:
+	%tmp.641 = getelementptr %Main, %Main* %tmp.639, i32 0, i32 0
+	%tmp.642 = load %Main_vtable*, %Main_vtable** %tmp.641
+	%tmp.643 = getelementptr %Main_vtable, %Main_vtable* %tmp.642, i32 0, i32 14
+	%tmp.644 = load %Expr* (%Main*) *, %Expr* (%Main*) ** %tmp.643
+	%tmp.645 = call %Expr*(%Main*) %tmp.644( %Main* %tmp.639 )
+	%tmp.646 = load %Main*, %Main** %tmp.276
+	%tmp.647 = icmp eq %Main* %tmp.646, null
+	br i1 %tmp.647, label %abort, label %ok.71
+
+ok.71:
+	%tmp.648 = getelementptr %Main, %Main* %tmp.646, i32 0, i32 0
+	%tmp.649 = load %Main_vtable*, %Main_vtable** %tmp.648
+	%tmp.650 = getelementptr %Main_vtable, %Main_vtable* %tmp.649, i32 0, i32 13
+	%tmp.651 = load %App* (%Main*,%Expr*,%Expr*) *, %App* (%Main*,%Expr*,%Expr*) ** %tmp.650
+	%tmp.652 = bitcast %App* %tmp.638 to %Expr*
+	%tmp.653 = call %App*(%Main*, %Expr*, %Expr*) %tmp.651( %Main* %tmp.646, %Expr* %tmp.652, %Expr* %tmp.645 )
+	%tmp.654 = load %Main*, %Main** %tmp.276
+	%tmp.655 = icmp eq %Main* %tmp.654, null
+	br i1 %tmp.655, label %abort, label %ok.70
+
+ok.70:
+	%tmp.656 = getelementptr %Main, %Main* %tmp.654, i32 0, i32 0
+	%tmp.657 = load %Main_vtable*, %Main_vtable** %tmp.656
+	%tmp.658 = getelementptr %Main_vtable, %Main_vtable* %tmp.657, i32 0, i32 20
+	%tmp.659 = load %Main* (%Main*,%Expr*) *, %Main* (%Main*,%Expr*) ** %tmp.658
+	%tmp.660 = bitcast %App* %tmp.653 to %Expr*
+	%tmp.661 = call %Main*(%Main*, %Expr*) %tmp.659( %Main* %tmp.654, %Expr* %tmp.660 )
+	%tmp.662 = load %Main*, %Main** %tmp.276
+	%tmp.663 = icmp eq %Main* %tmp.662, null
+	br i1 %tmp.663, label %abort, label %ok.91
+
+ok.91:
+	%tmp.664 = getelementptr %Main, %Main* %tmp.662, i32 0, i32 0
+	%tmp.665 = load %Main_vtable*, %Main_vtable** %tmp.664
+	%tmp.666 = getelementptr %Main_vtable, %Main_vtable* %tmp.665, i32 0, i32 14
+	%tmp.667 = load %Expr* (%Main*) *, %Expr* (%Main*) ** %tmp.666
+	%tmp.668 = call %Expr*(%Main*) %tmp.667( %Main* %tmp.662 )
+	%tmp.669 = load %Main*, %Main** %tmp.276
+	%tmp.670 = icmp eq %Main* %tmp.669, null
+	br i1 %tmp.670, label %abort, label %ok.93
+
+ok.93:
+	%tmp.671 = getelementptr %Main, %Main* %tmp.669, i32 0, i32 0
+	%tmp.672 = load %Main_vtable*, %Main_vtable** %tmp.671
+	%tmp.673 = getelementptr %Main_vtable, %Main_vtable* %tmp.672, i32 0, i32 15
+	%tmp.674 = load %Expr* (%Main*) *, %Expr* (%Main*) ** %tmp.673
+	%tmp.675 = call %Expr*(%Main*) %tmp.674( %Main* %tmp.669 )
+	%tmp.676 = load %Main*, %Main** %tmp.276
+	%tmp.677 = icmp eq %Main* %tmp.676, null
+	br i1 %tmp.677, label %abort, label %ok.94
+
+ok.94:
+	%tmp.678 = getelementptr %Main, %Main* %tmp.676, i32 0, i32 0
+	%tmp.679 = load %Main_vtable*, %Main_vtable** %tmp.678
+	%tmp.680 = getelementptr %Main_vtable, %Main_vtable* %tmp.679, i32 0, i32 16
+	%tmp.681 = load %Expr* (%Main*) *, %Expr* (%Main*) ** %tmp.680
+	%tmp.682 = call %Expr*(%Main*) %tmp.681( %Main* %tmp.676 )
+	%tmp.683 = load %Main*, %Main** %tmp.276
+	%tmp.684 = icmp eq %Main* %tmp.683, null
+	br i1 %tmp.684, label %abort, label %ok.92
+
+ok.92:
+	%tmp.685 = getelementptr %Main, %Main* %tmp.683, i32 0, i32 0
+	%tmp.686 = load %Main_vtable*, %Main_vtable** %tmp.685
+	%tmp.687 = getelementptr %Main_vtable, %Main_vtable* %tmp.686, i32 0, i32 13
+	%tmp.688 = load %App* (%Main*,%Expr*,%Expr*) *, %App* (%Main*,%Expr*,%Expr*) ** %tmp.687
+	%tmp.689 = call %App*(%Main*, %Expr*, %Expr*) %tmp.688( %Main* %tmp.683, %Expr* %tmp.675, %Expr* %tmp.682 )
+	%tmp.690 = load %Main*, %Main** %tmp.276
+	%tmp.691 = icmp eq %Main* %tmp.690, null
+	br i1 %tmp.691, label %abort, label %ok.90
+
+ok.90:
+	%tmp.692 = getelementptr %Main, %Main* %tmp.690, i32 0, i32 0
+	%tmp.693 = load %Main_vtable*, %Main_vtable** %tmp.692
+	%tmp.694 = getelementptr %Main_vtable, %Main_vtable* %tmp.693, i32 0, i32 13
+	%tmp.695 = load %App* (%Main*,%Expr*,%Expr*) *, %App* (%Main*,%Expr*,%Expr*) ** %tmp.694
+	%tmp.696 = bitcast %App* %tmp.689 to %Expr*
+	%tmp.697 = call %App*(%Main*, %Expr*, %Expr*) %tmp.695( %Main* %tmp.690, %Expr* %tmp.668, %Expr* %tmp.696 )
+	%tmp.698 = load %Main*, %Main** %tmp.276
+	%tmp.699 = icmp eq %Main* %tmp.698, null
+	br i1 %tmp.699, label %abort, label %ok.96
+
+ok.96:
+	%tmp.700 = getelementptr %Main, %Main* %tmp.698, i32 0, i32 0
+	%tmp.701 = load %Main_vtable*, %Main_vtable** %tmp.700
+	%tmp.702 = getelementptr %Main_vtable, %Main_vtable* %tmp.701, i32 0, i32 15
+	%tmp.703 = load %Expr* (%Main*) *, %Expr* (%Main*) ** %tmp.702
+	%tmp.704 = call %Expr*(%Main*) %tmp.703( %Main* %tmp.698 )
+	%tmp.705 = load %Main*, %Main** %tmp.276
+	%tmp.706 = icmp eq %Main* %tmp.705, null
+	br i1 %tmp.706, label %abort, label %ok.98
+
+ok.98:
+	%tmp.707 = getelementptr %Main, %Main* %tmp.705, i32 0, i32 0
+	%tmp.708 = load %Main_vtable*, %Main_vtable** %tmp.707
+	%tmp.709 = getelementptr %Main_vtable, %Main_vtable* %tmp.708, i32 0, i32 16
+	%tmp.710 = load %Expr* (%Main*) *, %Expr* (%Main*) ** %tmp.709
+	%tmp.711 = call %Expr*(%Main*) %tmp.710( %Main* %tmp.705 )
+	%tmp.712 = load %Main*, %Main** %tmp.276
+	%tmp.713 = icmp eq %Main* %tmp.712, null
+	br i1 %tmp.713, label %abort, label %ok.99
+
+ok.99:
+	%tmp.714 = getelementptr %Main, %Main* %tmp.712, i32 0, i32 0
+	%tmp.715 = load %Main_vtable*, %Main_vtable** %tmp.714
+	%tmp.716 = getelementptr %Main_vtable, %Main_vtable* %tmp.715, i32 0, i32 16
+	%tmp.717 = load %Expr* (%Main*) *, %Expr* (%Main*) ** %tmp.716
+	%tmp.718 = call %Expr*(%Main*) %tmp.717( %Main* %tmp.712 )
+	%tmp.719 = load %Main*, %Main** %tmp.276
+	%tmp.720 = icmp eq %Main* %tmp.719, null
+	br i1 %tmp.720, label %abort, label %ok.97
+
+ok.97:
+	%tmp.721 = getelementptr %Main, %Main* %tmp.719, i32 0, i32 0
+	%tmp.722 = load %Main_vtable*, %Main_vtable** %tmp.721
+	%tmp.723 = getelementptr %Main_vtable, %Main_vtable* %tmp.722, i32 0, i32 13
+	%tmp.724 = load %App* (%Main*,%Expr*,%Expr*) *, %App* (%Main*,%Expr*,%Expr*) ** %tmp.723
+	%tmp.725 = call %App*(%Main*, %Expr*, %Expr*) %tmp.724( %Main* %tmp.719, %Expr* %tmp.711, %Expr* %tmp.718 )
+	%tmp.726 = load %Main*, %Main** %tmp.276
+	%tmp.727 = icmp eq %Main* %tmp.726, null
+	br i1 %tmp.727, label %abort, label %ok.95
+
+ok.95:
+	%tmp.728 = getelementptr %Main, %Main* %tmp.726, i32 0, i32 0
+	%tmp.729 = load %Main_vtable*, %Main_vtable** %tmp.728
+	%tmp.730 = getelementptr %Main_vtable, %Main_vtable* %tmp.729, i32 0, i32 13
+	%tmp.731 = load %App* (%Main*,%Expr*,%Expr*) *, %App* (%Main*,%Expr*,%Expr*) ** %tmp.730
+	%tmp.732 = bitcast %App* %tmp.725 to %Expr*
+	%tmp.733 = call %App*(%Main*, %Expr*, %Expr*) %tmp.731( %Main* %tmp.726, %Expr* %tmp.704, %Expr* %tmp.732 )
+	%tmp.734 = load %Main*, %Main** %tmp.276
+	%tmp.735 = icmp eq %Main* %tmp.734, null
+	br i1 %tmp.735, label %abort, label %ok.89
+
+ok.89:
+	%tmp.736 = getelementptr %Main, %Main* %tmp.734, i32 0, i32 0
+	%tmp.737 = load %Main_vtable*, %Main_vtable** %tmp.736
+	%tmp.738 = getelementptr %Main_vtable, %Main_vtable* %tmp.737, i32 0, i32 13
+	%tmp.739 = load %App* (%Main*,%Expr*,%Expr*) *, %App* (%Main*,%Expr*,%Expr*) ** %tmp.738
+	%tmp.740 = bitcast %App* %tmp.697 to %Expr*
+	%tmp.741 = bitcast %App* %tmp.733 to %Expr*
+	%tmp.742 = call %App*(%Main*, %Expr*, %Expr*) %tmp.739( %Main* %tmp.734, %Expr* %tmp.740, %Expr* %tmp.741 )
+	%tmp.743 = load %Main*, %Main** %tmp.276
+	%tmp.744 = icmp eq %Main* %tmp.743, null
+	br i1 %tmp.744, label %abort, label %ok.88
+
+ok.88:
+	%tmp.745 = getelementptr %Main, %Main* %tmp.743, i32 0, i32 0
+	%tmp.746 = load %Main_vtable*, %Main_vtable** %tmp.745
+	%tmp.747 = getelementptr %Main_vtable, %Main_vtable* %tmp.746, i32 0, i32 20
+	%tmp.748 = load %Main* (%Main*,%Expr*) *, %Main* (%Main*,%Expr*) ** %tmp.747
+	%tmp.749 = bitcast %App* %tmp.742 to %Expr*
+	%tmp.750 = call %Main*(%Main*, %Expr*) %tmp.748( %Main* %tmp.743, %Expr* %tmp.749 )
+	ret i32 0
+
+abort:
+	call void @abort(  )
+	unreachable
+}
+
+define %Main* @Main_new() {
+
+entry:
+	%tmp.751 = getelementptr %Main_vtable, %Main_vtable* @Main_vtable_prototype, i32 0, i32 1
+	%tmp.752 = load i32, i32* %tmp.751
+	%tmp.753 = call i8*(i32) @malloc( i32 %tmp.752 )
+	%tmp.754 = bitcast i8* %tmp.753 to %Main*
+	%tmp.755 = getelementptr %Main, %Main* %tmp.754, i32 0, i32 0
+	store %Main_vtable* @Main_vtable_prototype, %Main_vtable** %tmp.755
+	%tmp.756 = alloca %Main*
+	store %Main* %tmp.754, %Main** %tmp.756
+	ret %Main* %tmp.754
+
+abort:
+	call void @abort(  )
+	unreachable
+}
+
+define i1 @LambdaList_isNil(%LambdaList* %self) {
+
+entry:
+	%tmp.0 = alloca %LambdaList*
+	store %LambdaList* %self, %LambdaList** %tmp.0
+	ret i1 true
+
+abort:
+	call void @abort(  )
+	unreachable
+}
+
+define %VarList* @LambdaList_headE(%LambdaList* %self) {
+
+entry:
+	%tmp.1 = alloca %LambdaList*
+	store %LambdaList* %self, %LambdaList** %tmp.1
+	%tmp.2 = load %LambdaList*, %LambdaList** %tmp.1
+	%tmp.3 = icmp eq %LambdaList* %tmp.2, null
+	br i1 %tmp.3, label %abort, label %ok.0
+
+ok.0:
+	%tmp.4 = getelementptr %LambdaList, %LambdaList* %tmp.2, i32 0, i32 0
+	%tmp.5 = load %LambdaList_vtable*, %LambdaList_vtable** %tmp.4
+	%tmp.6 = getelementptr %LambdaList_vtable, %LambdaList_vtable* %tmp.5, i32 0, i32 4
+	%tmp.7 = load %Object* (%LambdaList*) *, %Object* (%LambdaList*) ** %tmp.6
+	%tmp.8 = call %Object*(%LambdaList*) %tmp.7( %LambdaList* %tmp.2 )
+	%tmp.9 = call %VarList* @VarList_new(  )
+	ret %VarList* %tmp.9
+
+abort:
+	call void @abort(  )
+	unreachable
+}
+
+define %Lambda* @LambdaList_headC(%LambdaList* %self) {
+
+entry:
+	%tmp.10 = alloca %LambdaList*
+	store %LambdaList* %self, %LambdaList** %tmp.10
+	%tmp.11 = load %LambdaList*, %LambdaList** %tmp.10
+	%tmp.12 = icmp eq %LambdaList* %tmp.11, null
+	br i1 %tmp.12, label %abort, label %ok.1
+
+ok.1:
+	%tmp.13 = getelementptr %LambdaList, %LambdaList* %tmp.11, i32 0, i32 0
+	%tmp.14 = load %LambdaList_vtable*, %LambdaList_vtable** %tmp.13
+	%tmp.15 = getelementptr %LambdaList_vtable, %LambdaList_vtable* %tmp.14, i32 0, i32 4
+	%tmp.16 = load %Object* (%LambdaList*) *, %Object* (%LambdaList*) ** %tmp.15
+	%tmp.17 = call %Object*(%LambdaList*) %tmp.16( %LambdaList* %tmp.11 )
+	%tmp.18 = call %Lambda* @Lambda_new(  )
+	ret %Lambda* %tmp.18
+
+abort:
+	call void @abort(  )
+	unreachable
+}
+
+define i32 @LambdaList_headN(%LambdaList* %self) {
+
+entry:
+	%tmp.19 = alloca %LambdaList*
+	store %LambdaList* %self, %LambdaList** %tmp.19
+	%tmp.20 = load %LambdaList*, %LambdaList** %tmp.19
+	%tmp.21 = icmp eq %LambdaList* %tmp.20, null
+	br i1 %tmp.21, label %abort, label %ok.2
+
+ok.2:
+	%tmp.22 = getelementptr %LambdaList, %LambdaList* %tmp.20, i32 0, i32 0
+	%tmp.23 = load %LambdaList_vtable*, %LambdaList_vtable** %tmp.22
+	%tmp.24 = getelementptr %LambdaList_vtable, %LambdaList_vtable* %tmp.23, i32 0, i32 4
+	%tmp.25 = load %Object* (%LambdaList*) *, %Object* (%LambdaList*) ** %tmp.24
+	%tmp.26 = call %Object*(%LambdaList*) %tmp.25( %LambdaList* %tmp.20 )
+	ret i32 0
+
+abort:
+	call void @abort(  )
+	unreachable
+}
+
+define %LambdaList* @LambdaList_tail(%LambdaList* %self) {
+
+entry:
+	%tmp.27 = alloca %LambdaList*
+	store %LambdaList* %self, %LambdaList** %tmp.27
+	%tmp.28 = load %LambdaList*, %LambdaList** %tmp.27
+	%tmp.29 = icmp eq %LambdaList* %tmp.28, null
+	br i1 %tmp.29, label %abort, label %ok.3
+
+ok.3:
+	%tmp.30 = getelementptr %LambdaList, %LambdaList* %tmp.28, i32 0, i32 0
+	%tmp.31 = load %LambdaList_vtable*, %LambdaList_vtable** %tmp.30
+	%tmp.32 = getelementptr %LambdaList_vtable, %LambdaList_vtable* %tmp.31, i32 0, i32 4
+	%tmp.33 = load %Object* (%LambdaList*) *, %Object* (%LambdaList*) ** %tmp.32
+	%tmp.34 = call %Object*(%LambdaList*) %tmp.33( %LambdaList* %tmp.28 )
+	%tmp.35 = call %LambdaList* @LambdaList_new(  )
+	ret %LambdaList* %tmp.35
+
+abort:
+	call void @abort(  )
+	unreachable
+}
+
+define %LambdaList* @LambdaList_add(%LambdaList* %self, %VarList* %e, %Lambda* %x, i32 %n) {
+
+entry:
+	%tmp.36 = alloca %LambdaList*
+	store %LambdaList* %self, %LambdaList** %tmp.36
+	%tmp.37 = alloca %VarList*
+	store %VarList* %e, %VarList** %tmp.37
+	%tmp.38 = alloca %Lambda*
+	store %Lambda* %x, %Lambda** %tmp.38
+	%tmp.39 = alloca i32
+	store i32 %n, i32* %tmp.39
+	%tmp.40 = load %VarList*, %VarList** %tmp.37
+	%tmp.41 = load %Lambda*, %Lambda** %tmp.38
+	%tmp.42 = load i32, i32* %tmp.39
+	%tmp.43 = load %LambdaList*, %LambdaList** %tmp.36
+	%tmp.44 = call %LambdaListNE* @LambdaListNE_new(  )
+	%tmp.45 = icmp eq %LambdaListNE* %tmp.44, null
+	br i1 %tmp.45, label %abort, label %ok.4
+
+ok.4:
+	%tmp.46 = getelementptr %LambdaListNE, %LambdaListNE* %tmp.44, i32 0, i32 0
+	%tmp.47 = load %LambdaListNE_vtable*, %LambdaListNE_vtable** %tmp.46
+	%tmp.48 = getelementptr %LambdaListNE_vtable, %LambdaListNE_vtable* %tmp.47, i32 0, i32 13
+	%tmp.49 = load %LambdaListNE* (%LambdaListNE*,%VarList*,%Lambda*,i32,%LambdaList*) *, %LambdaListNE* (%LambdaListNE*,%VarList*,%Lambda*,i32,%LambdaList*) ** %tmp.48
+	%tmp.50 = call %LambdaListNE*(%LambdaListNE*, %VarList*, %Lambda*, i32, %LambdaList*) %tmp.49( %LambdaListNE* %tmp.44, %VarList* %tmp.40, %Lambda* %tmp.41, i32 %tmp.42, %LambdaList* %tmp.43 )
+	%tmp.51 = bitcast %LambdaListNE* %tmp.50 to %LambdaList*
+	ret %LambdaList* %tmp.51
+
+abort:
+	call void @abort(  )
+	unreachable
+}
+
+define %LambdaList* @LambdaList_new() {
+
+entry:
+	%tmp.52 = getelementptr %LambdaList_vtable, %LambdaList_vtable* @LambdaList_vtable_prototype, i32 0, i32 1
+	%tmp.53 = load i32, i32* %tmp.52
+	%tmp.54 = call i8*(i32) @malloc( i32 %tmp.53 )
+	%tmp.55 = bitcast i8* %tmp.54 to %LambdaList*
+	%tmp.56 = getelementptr %LambdaList, %LambdaList* %tmp.55, i32 0, i32 0
+	store %LambdaList_vtable* @LambdaList_vtable_prototype, %LambdaList_vtable** %tmp.56
+	%tmp.57 = alloca %LambdaList*
+	store %LambdaList* %tmp.55, %LambdaList** %tmp.57
+	ret %LambdaList* %tmp.55
+
+abort:
+	call void @abort(  )
+	unreachable
+}
+
+define i1 @LambdaListNE_isNil(%LambdaListNE* %self) {
+
+entry:
+	%tmp.0 = alloca %LambdaListNE*
+	store %LambdaListNE* %self, %LambdaListNE** %tmp.0
+	ret i1 false
+
+abort:
+	call void @abort(  )
+	unreachable
+}
+
+define %VarList* @LambdaListNE_headE(%LambdaListNE* %self) {
+
+entry:
+	%tmp.1 = alloca %LambdaListNE*
+	store %LambdaListNE* %self, %LambdaListNE** %tmp.1
+	%tmp.2 = load %LambdaListNE*, %LambdaListNE** %tmp.1
+	%tmp.3 = getelementptr %LambdaListNE, %LambdaListNE* %tmp.2, i32 0, i32 3
+	%tmp.4 = load %VarList*, %VarList** %tmp.3
+	ret %VarList* %tmp.4
+
+abort:
+	call void @abort(  )
+	unreachable
+}
+
+define %Lambda* @LambdaListNE_headC(%LambdaListNE* %self) {
+
+entry:
+	%tmp.5 = alloca %LambdaListNE*
+	store %LambdaListNE* %self, %LambdaListNE** %tmp.5
+	%tmp.6 = load %LambdaListNE*, %LambdaListNE** %tmp.5
+	%tmp.7 = getelementptr %LambdaListNE, %LambdaListNE* %tmp.6, i32 0, i32 1
+	%tmp.8 = load %Lambda*, %Lambda** %tmp.7
+	ret %Lambda* %tmp.8
+
+abort:
+	call void @abort(  )
+	unreachable
+}
+
+define i32 @LambdaListNE_headN(%LambdaListNE* %self) {
+
+entry:
+	%tmp.9 = alloca %LambdaListNE*
+	store %LambdaListNE* %self, %LambdaListNE** %tmp.9
+	%tmp.10 = load %LambdaListNE*, %LambdaListNE** %tmp.9
+	%tmp.11 = getelementptr %LambdaListNE, %LambdaListNE* %tmp.10, i32 0, i32 2
+	%tmp.12 = load i32, i32* %tmp.11
+	ret i32 %tmp.12
+
+abort:
+	call void @abort(  )
+	unreachable
+}
+
+define %LambdaList* @LambdaListNE_tail(%LambdaListNE* %self) {
+
+entry:
+	%tmp.13 = alloca %LambdaListNE*
+	store %LambdaListNE* %self, %LambdaListNE** %tmp.13
+	%tmp.14 = load %LambdaListNE*, %LambdaListNE** %tmp.13
+	%tmp.15 = getelementptr %LambdaListNE, %LambdaListNE* %tmp.14, i32 0, i32 4
+	%tmp.16 = load %LambdaList*, %LambdaList** %tmp.15
+	ret %LambdaList* %tmp.16
+
+abort:
+	call void @abort(  )
+	unreachable
+}
+
+define %LambdaListNE* @LambdaListNE_init(%LambdaListNE* %self, %VarList* %e, %Lambda* %l, i32 %n, %LambdaList* %r) {
+
+entry:
+	%tmp.17 = alloca %LambdaListNE*
+	store %LambdaListNE* %self, %LambdaListNE** %tmp.17
+	%tmp.18 = alloca %VarList*
+	store %VarList* %e, %VarList** %tmp.18
+	%tmp.19 = alloca %Lambda*
+	store %Lambda* %l, %Lambda** %tmp.19
+	%tmp.20 = alloca i32
+	store i32 %n, i32* %tmp.20
+	%tmp.21 = alloca %LambdaList*
+	store %LambdaList* %r, %LambdaList** %tmp.21
+	%tmp.22 = load %VarList*, %VarList** %tmp.18
+	%tmp.23 = load %LambdaListNE*, %LambdaListNE** %tmp.17
+	%tmp.24 = getelementptr %LambdaListNE, %LambdaListNE* %tmp.23, i32 0, i32 3
+	store %VarList* %tmp.22, %VarList** %tmp.24
+	%tmp.25 = load %Lambda*, %Lambda** %tmp.19
+	%tmp.26 = load %LambdaListNE*, %LambdaListNE** %tmp.17
+	%tmp.27 = getelementptr %LambdaListNE, %LambdaListNE* %tmp.26, i32 0, i32 1
+	store %Lambda* %tmp.25, %Lambda** %tmp.27
+	%tmp.28 = load i32, i32* %tmp.20
+	%tmp.29 = load %LambdaListNE*, %LambdaListNE** %tmp.17
+	%tmp.30 = getelementptr %LambdaListNE, %LambdaListNE* %tmp.29, i32 0, i32 2
+	store i32 %tmp.28, i32* %tmp.30
+	%tmp.31 = load %LambdaList*, %LambdaList** %tmp.21
+	%tmp.32 = load %LambdaListNE*, %LambdaListNE** %tmp.17
+	%tmp.33 = getelementptr %LambdaListNE, %LambdaListNE* %tmp.32, i32 0, i32 4
+	store %LambdaList* %tmp.31, %LambdaList** %tmp.33
+	%tmp.34 = load %LambdaListNE*, %LambdaListNE** %tmp.17
+	ret %LambdaListNE* %tmp.34
+
+abort:
+	call void @abort(  )
+	unreachable
+}
+
+define %LambdaListNE* @LambdaListNE_new() {
+
+entry:
+	%tmp.35 = getelementptr %LambdaListNE_vtable, %LambdaListNE_vtable* @LambdaListNE_vtable_prototype, i32 0, i32 1
+	%tmp.36 = load i32, i32* %tmp.35
+	%tmp.37 = call i8*(i32) @malloc( i32 %tmp.36 )
+	%tmp.38 = bitcast i8* %tmp.37 to %LambdaListNE*
+	%tmp.39 = getelementptr %LambdaListNE, %LambdaListNE* %tmp.38, i32 0, i32 0
+	store %LambdaListNE_vtable* @LambdaListNE_vtable_prototype, %LambdaListNE_vtable** %tmp.39
+	%tmp.40 = alloca %LambdaListNE*
+	store %LambdaListNE* %tmp.38, %LambdaListNE** %tmp.40
+	%tmp.41 = getelementptr %LambdaListNE, %LambdaListNE* %tmp.38, i32 0, i32 1
+	store %Lambda* null, %Lambda** %tmp.41
+	%tmp.42 = getelementptr %LambdaListNE, %LambdaListNE* %tmp.38, i32 0, i32 2
+	store i32 0, i32* %tmp.42
+	%tmp.43 = getelementptr %LambdaListNE, %LambdaListNE* %tmp.38, i32 0, i32 3
+	store %VarList* null, %VarList** %tmp.43
+	%tmp.44 = getelementptr %LambdaListNE, %LambdaListNE* %tmp.38, i32 0, i32 4
+	store %LambdaList* null, %LambdaList** %tmp.44
+	ret %LambdaListNE* %tmp.38
+
+abort:
+	call void @abort(  )
+	unreachable
+}
+
+define i1 @LambdaListRef_isNil(%LambdaListRef* %self) {
+
+entry:
+	%tmp.0 = alloca %LambdaListRef*
+	store %LambdaListRef* %self, %LambdaListRef** %tmp.0
+	%tmp.1 = load %LambdaListRef*, %LambdaListRef** %tmp.0
+	%tmp.2 = getelementptr %LambdaListRef, %LambdaListRef* %tmp.1, i32 0, i32 2
+	%tmp.3 = load %LambdaList*, %LambdaList** %tmp.2
+	%tmp.4 = icmp eq %LambdaList* %tmp.3, null
+	br i1 %tmp.4, label %abort, label %ok.0
+
+ok.0:
+	%tmp.5 = getelementptr %LambdaList, %LambdaList* %tmp.3, i32 0, i32 0
+	%tmp.6 = load %LambdaList_vtable*, %LambdaList_vtable** %tmp.5
+	%tmp.7 = getelementptr %LambdaList_vtable, %LambdaList_vtable* %tmp.6, i32 0, i32 7
+	%tmp.8 = load i1 (%LambdaList*) *, i1 (%LambdaList*) ** %tmp.7
+	%tmp.9 = call i1(%LambdaList*) %tmp.8( %LambdaList* %tmp.3 )
+	ret i1 %tmp.9
+
+abort:
+	call void @abort(  )
+	unreachable
+}
+
+define %VarList* @LambdaListRef_headE(%LambdaListRef* %self) {
+
+entry:
+	%tmp.10 = alloca %LambdaListRef*
+	store %LambdaListRef* %self, %LambdaListRef** %tmp.10
+	%tmp.11 = load %LambdaListRef*, %LambdaListRef** %tmp.10
+	%tmp.12 = getelementptr %LambdaListRef, %LambdaListRef* %tmp.11, i32 0, i32 2
+	%tmp.13 = load %LambdaList*, %LambdaList** %tmp.12
+	%tmp.14 = icmp eq %LambdaList* %tmp.13, null
+	br i1 %tmp.14, label %abort, label %ok.1
+
+ok.1:
+	%tmp.15 = getelementptr %LambdaList, %LambdaList* %tmp.13, i32 0, i32 0
+	%tmp.16 = load %LambdaList_vtable*, %LambdaList_vtable** %tmp.15
+	%tmp.17 = getelementptr %LambdaList_vtable, %LambdaList_vtable* %tmp.16, i32 0, i32 8
+	%tmp.18 = load %VarList* (%LambdaList*) *, %VarList* (%LambdaList*) ** %tmp.17
+	%tmp.19 = call %VarList*(%LambdaList*) %tmp.18( %LambdaList* %tmp.13 )
+	ret %VarList* %tmp.19
+
+abort:
+	call void @abort(  )
+	unreachable
+}
+
+define %Lambda* @LambdaListRef_headC(%LambdaListRef* %self) {
+
+entry:
+	%tmp.20 = alloca %LambdaListRef*
+	store %LambdaListRef* %self, %LambdaListRef** %tmp.20
+	%tmp.21 = load %LambdaListRef*, %LambdaListRef** %tmp.20
+	%tmp.22 = getelementptr %LambdaListRef, %LambdaListRef* %tmp.21, i32 0, i32 2
+	%tmp.23 = load %LambdaList*, %LambdaList** %tmp.22
+	%tmp.24 = icmp eq %LambdaList* %tmp.23, null
+	br i1 %tmp.24, label %abort, label %ok.2
+
+ok.2:
+	%tmp.25 = getelementptr %LambdaList, %LambdaList* %tmp.23, i32 0, i32 0
+	%tmp.26 = load %LambdaList_vtable*, %LambdaList_vtable** %tmp.25
+	%tmp.27 = getelementptr %LambdaList_vtable, %LambdaList_vtable* %tmp.26, i32 0, i32 9
+	%tmp.28 = load %Lambda* (%LambdaList*) *, %Lambda* (%LambdaList*) ** %tmp.27
+	%tmp.29 = call %Lambda*(%LambdaList*) %tmp.28( %LambdaList* %tmp.23 )
+	ret %Lambda* %tmp.29
+
+abort:
+	call void @abort(  )
+	unreachable
+}
+
+define i32 @LambdaListRef_headN(%LambdaListRef* %self) {
+
+entry:
+	%tmp.30 = alloca %LambdaListRef*
+	store %LambdaListRef* %self, %LambdaListRef** %tmp.30
+	%tmp.31 = load %LambdaListRef*, %LambdaListRef** %tmp.30
+	%tmp.32 = getelementptr %LambdaListRef, %LambdaListRef* %tmp.31, i32 0, i32 2
+	%tmp.33 = load %LambdaList*, %LambdaList** %tmp.32
+	%tmp.34 = icmp eq %LambdaList* %tmp.33, null
+	br i1 %tmp.34, label %abort, label %ok.3
+
+ok.3:
+	%tmp.35 = getelementptr %LambdaList, %LambdaList* %tmp.33, i32 0, i32 0
+	%tmp.36 = load %LambdaList_vtable*, %LambdaList_vtable** %tmp.35
+	%tmp.37 = getelementptr %LambdaList_vtable, %LambdaList_vtable* %tmp.36, i32 0, i32 10
+	%tmp.38 = load i32 (%LambdaList*) *, i32 (%LambdaList*) ** %tmp.37
+	%tmp.39 = call i32(%LambdaList*) %tmp.38( %LambdaList* %tmp.33 )
+	ret i32 %tmp.39
+
+abort:
+	call void @abort(  )
+	unreachable
+}
+
+define %LambdaListRef* @LambdaListRef_reset(%LambdaListRef* %self) {
+
+entry:
+	%tmp.40 = alloca %LambdaListRef*
+	store %LambdaListRef* %self, %LambdaListRef** %tmp.40
+	%tmp.41 = load %LambdaListRef*, %LambdaListRef** %tmp.40
+	%tmp.42 = getelementptr %LambdaListRef, %LambdaListRef* %tmp.41, i32 0, i32 1
+	store i32 0, i32* %tmp.42
+	%tmp.43 = call %LambdaList* @LambdaList_new(  )
+	%tmp.44 = load %LambdaListRef*, %LambdaListRef** %tmp.40
+	%tmp.45 = getelementptr %LambdaListRef, %LambdaListRef* %tmp.44, i32 0, i32 2
+	store %LambdaList* %tmp.43, %LambdaList** %tmp.45
+	%tmp.46 = load %LambdaListRef*, %LambdaListRef** %tmp.40
+	ret %LambdaListRef* %tmp.46
+
+abort:
+	call void @abort(  )
+	unreachable
+}
+
+define i32 @LambdaListRef_add(%LambdaListRef* %self, %VarList* %env, %Lambda* %c) {
+
+entry:
+	%tmp.47 = alloca %LambdaListRef*
+	store %LambdaListRef* %self, %LambdaListRef** %tmp.47
+	%tmp.48 = alloca %VarList*
+	store %VarList* %env, %VarList** %tmp.48
+	%tmp.49 = alloca %Lambda*
+	store %Lambda* %c, %Lambda** %tmp.49
+	%tmp.50 = load %VarList*, %VarList** %tmp.48
+	%tmp.51 = load %Lambda*, %Lambda** %tmp.49
+	%tmp.52 = load %LambdaListRef*, %LambdaListRef** %tmp.47
+	%tmp.53 = getelementptr %LambdaListRef, %LambdaListRef* %tmp.52, i32 0, i32 1
+	%tmp.54 = load i32, i32* %tmp.53
+	%tmp.55 = load %LambdaListRef*, %LambdaListRef** %tmp.47
+	%tmp.56 = getelementptr %LambdaListRef, %LambdaListRef* %tmp.55, i32 0, i32 2
+	%tmp.57 = load %LambdaList*, %LambdaList** %tmp.56
+	%tmp.58 = icmp eq %LambdaList* %tmp.57, null
+	br i1 %tmp.58, label %abort, label %ok.4
+
+ok.4:
+	%tmp.59 = getelementptr %LambdaList, %LambdaList* %tmp.57, i32 0, i32 0
+	%tmp.60 = load %LambdaList_vtable*, %LambdaList_vtable** %tmp.59
+	%tmp.61 = getelementptr %LambdaList_vtable, %LambdaList_vtable* %tmp.60, i32 0, i32 12
+	%tmp.62 = load %LambdaList* (%LambdaList*,%VarList*,%Lambda*,i32) *, %LambdaList* (%LambdaList*,%VarList*,%Lambda*,i32) ** %tmp.61
+	%tmp.63 = call %LambdaList*(%LambdaList*, %VarList*, %Lambda*, i32) %tmp.62( %LambdaList* %tmp.57, %VarList* %tmp.50, %Lambda* %tmp.51, i32 %tmp.54 )
+	%tmp.64 = load %LambdaListRef*, %LambdaListRef** %tmp.47
+	%tmp.65 = getelementptr %LambdaListRef, %LambdaListRef* %tmp.64, i32 0, i32 2
+	store %LambdaList* %tmp.63, %LambdaList** %tmp.65
+	%tmp.66 = load %LambdaListRef*, %LambdaListRef** %tmp.47
+	%tmp.67 = getelementptr %LambdaListRef, %LambdaListRef* %tmp.66, i32 0, i32 1
+	%tmp.68 = load i32, i32* %tmp.67
+	%tmp.69 = add i32 %tmp.68, 1
+	%tmp.70 = load %LambdaListRef*, %LambdaListRef** %tmp.47
+	%tmp.71 = getelementptr %LambdaListRef, %LambdaListRef* %tmp.70, i32 0, i32 1
+	store i32 %tmp.69, i32* %tmp.71
+	%tmp.72 = load %LambdaListRef*, %LambdaListRef** %tmp.47
+	%tmp.73 = getelementptr %LambdaListRef, %LambdaListRef* %tmp.72, i32 0, i32 1
+	%tmp.74 = load i32, i32* %tmp.73
+	%tmp.75 = sub i32 %tmp.74, 1
+	ret i32 %tmp.75
+
+abort:
+	call void @abort(  )
+	unreachable
+}
+
+define %LambdaListRef* @LambdaListRef_removeHead(%LambdaListRef* %self) {
+
+entry:
+	%tmp.76 = alloca %LambdaListRef*
+	store %LambdaListRef* %self, %LambdaListRef** %tmp.76
+	%tmp.77 = load %LambdaListRef*, %LambdaListRef** %tmp.76
+	%tmp.78 = getelementptr %LambdaListRef, %LambdaListRef* %tmp.77, i32 0, i32 2
+	%tmp.79 = load %LambdaList*, %LambdaList** %tmp.78
+	%tmp.80 = icmp eq %LambdaList* %tmp.79, null
+	br i1 %tmp.80, label %abort, label %ok.5
+
+ok.5:
+	%tmp.81 = getelementptr %LambdaList, %LambdaList* %tmp.79, i32 0, i32 0
+	%tmp.82 = load %LambdaList_vtable*, %LambdaList_vtable** %tmp.81
+	%tmp.83 = getelementptr %LambdaList_vtable, %LambdaList_vtable* %tmp.82, i32 0, i32 11
+	%tmp.84 = load %LambdaList* (%LambdaList*) *, %LambdaList* (%LambdaList*) ** %tmp.83
+	%tmp.85 = call %LambdaList*(%LambdaList*) %tmp.84( %LambdaList* %tmp.79 )
+	%tmp.86 = load %LambdaListRef*, %LambdaListRef** %tmp.76
+	%tmp.87 = getelementptr %LambdaListRef, %LambdaListRef* %tmp.86, i32 0, i32 2
+	store %LambdaList* %tmp.85, %LambdaList** %tmp.87
+	%tmp.88 = load %LambdaListRef*, %LambdaListRef** %tmp.76
+	ret %LambdaListRef* %tmp.88
+
+abort:
+	call void @abort(  )
+	unreachable
+}
+
+define %LambdaListRef* @LambdaListRef_new() {
+
+entry:
+	%tmp.89 = getelementptr %LambdaListRef_vtable, %LambdaListRef_vtable* @LambdaListRef_vtable_prototype, i32 0, i32 1
+	%tmp.90 = load i32, i32* %tmp.89
+	%tmp.91 = call i8*(i32) @malloc( i32 %tmp.90 )
+	%tmp.92 = bitcast i8* %tmp.91 to %LambdaListRef*
+	%tmp.93 = getelementptr %LambdaListRef, %LambdaListRef* %tmp.92, i32 0, i32 0
+	store %LambdaListRef_vtable* @LambdaListRef_vtable_prototype, %LambdaListRef_vtable** %tmp.93
+	%tmp.94 = alloca %LambdaListRef*
+	store %LambdaListRef* %tmp.92, %LambdaListRef** %tmp.94
+	%tmp.95 = getelementptr %LambdaListRef, %LambdaListRef* %tmp.92, i32 0, i32 1
+	store i32 0, i32* %tmp.95
+	%tmp.96 = getelementptr %LambdaListRef, %LambdaListRef* %tmp.92, i32 0, i32 2
+	store %LambdaList* null, %LambdaList** %tmp.96
+	ret %LambdaListRef* %tmp.92
+
+abort:
+	call void @abort(  )
+	unreachable
+}
+
